@@ -144,12 +144,48 @@ function App() {
 
 ## Development
 
+### Component Development with Storybook
+
+Storybook is the primary development environment for building and testing components:
+
+```bash
+# Start Storybook dev server
+npm run storybook
+
+# Build static Storybook
+npm run build-storybook
+```
+
+Storybook provides:
+- Interactive component playground
+- Theme switching (light/dark)
+- Live component documentation
+- Visual testing environment
+
+See [`docs/STORYBOOK.md`](docs/STORYBOOK.md) for complete Storybook documentation.
+
+### Consumer Smoke Test
+
+The library includes a consumer smoke test that verifies it works correctly when installed as a package:
+
+```bash
+npm run smoke-test
+```
+
+This test:
+- Builds the library
+- Installs it in a minimal Vite app
+- Imports components via subpath exports
+- Verifies the build succeeds
+- Confirms token CSS is applied
+
+The smoke test can run in CI without network calls beyond dependency installation. See [`smoke-test/README.md`](./smoke-test/README.md) for details.
+
+### Other Development Commands
+
 ```bash
 # Install dependencies
 npm install
-
-# Run type checking
-npm run typecheck
 
 # Run linting
 npm run lint
@@ -197,8 +233,10 @@ See [`docs/TOKEN-COMPLIANCE.md`](docs/TOKEN-COMPLIANCE.md) for complete token re
 ### For Contributors
 
 - **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** — Contribution guidelines
+- **[STORYBOOK.md](docs/STORYBOOK.md)** — Storybook development guide
 - **[PACKAGING.md](docs/PACKAGING.md)** — Import patterns and tree-shaking
 - **[design-tokens.md](docs/design-tokens.md)** — Token philosophy and architecture
+- **[COMPONENT-DEVIATIONS.md](docs/COMPONENT-DEVIATIONS.md)** — Changes from shadcn/ui defaults
 - **[SECURITY.md](docs/SECURITY.md)** — Security policy
 
 ## License

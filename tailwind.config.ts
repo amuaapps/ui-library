@@ -4,6 +4,7 @@ const config: Config = {
   darkMode: ['class'],
   content: [
     './src/**/*.{ts,tsx}',
+    './.storybook/**/*.{js,jsx,ts,tsx}',
   ],
   prefix: '',
   theme: {
