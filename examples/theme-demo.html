@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Token System & Dark Mode Demo</title>
+  <style>
+    /* Simulate the token system for demo purposes */
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --primary: 222.2 47.4% 11.2%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96.1%;
+      --secondary-foreground: 222.2 47.4% 11.2%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 210 40% 98%;
+      --success: 142.1 76.2% 36.3%;
+      --success-foreground: 210 40% 98%;
+      --warning: 38 92% 50%;
+      --warning-foreground: 222.2 47.4% 11.2%;
+      --info: 199 89% 48%;
+      --info-foreground: 210 40% 98%;
+      --border: 214.3 31.8% 91.4%;
+      --radius: 0.5rem;
+    }
+
+    .dark {
+      --background: 222.2 84% 4.9%;
+      --foreground: 210 40% 98%;
+      --primary: 210 40% 98%;
+      --primary-foreground: 222.2 47.4% 11.2%;
+      --secondary: 217.2 32.6% 17.5%;
+      --secondary-foreground: 210 40% 98%;
+      --destructive: 0 62.8% 30.6%;
+      --destructive-foreground: 210 40% 98%;
+      --success: 142.1 70.6% 45.3%;
+      --success-foreground: 210 40% 98%;
+      --warning: 38 92% 50%;
+      --warning-foreground: 222.2 47.4% 11.2%;
+      --info: 199 89% 48%;
+      --info-foreground: 210 40% 98%;
+      --border: 217.2 32.6% 17.5%;
+    }
+
+    body {
+      margin: 0;
+      padding: 2rem;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 2rem;
+    }
+
+    .controls {
+      margin-bottom: 2rem;
+      padding: 1rem;
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .btn-primary {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+    }
+
+    .btn-secondary {
+      background: hsl(var(--secondary));
+      color: hsl(var(--secondary-foreground));
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      padding: 1.5rem;
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      background: hsl(var(--background));
+    }
+
+    .card h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1rem;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 0.875rem;
+      opacity: 0.8;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge-primary {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+    }
+
+    .badge-destructive {
+      background: hsl(var(--destructive));
+      color: hsl(var(--destructive-foreground));
+    }
+
+    .badge-success {
+      background: hsl(var(--success));
+      color: hsl(var(--success-foreground));
+    }
+
+    .badge-warning {
+      background: hsl(var(--warning));
+      color: hsl(var(--warning-foreground));
+    }
+
+    .badge-info {
+      background: hsl(var(--info));
+      color: hsl(var(--info-foreground));
+    }
+
+    .token-list {
+      display: grid;
+      gap: 0.5rem;
+      font-family: monospace;
+      font-size: 0.875rem;
+    }
+
+    .token-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .token-swatch {
+      width: 3rem;
+      height: 2rem;
+      border: 1px solid hsl(var(--border));
+      border-radius: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Token System & Dark Mode Demo</h1>
+    
+    <div class="controls">
+      <button class="btn-primary" onclick="toggleTheme()">
+        Toggle Dark Mode
+      </button>
+      <span id="theme-status" style="margin-left: 1rem; opacity: 0.7;">
+        Current: Light Mode
+      </span>
+    </div>
+
+    <h2>Semantic Color Tokens</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Primary</h3>
+        <p>Main brand color for primary actions</p>
+        <div style="margin-top: 1rem;">
+          <span class="badge badge-primary">Primary Badge</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Destructive</h3>
+        <p>For dangerous or destructive actions</p>
+        <div style="margin-top: 1rem;">
+          <span class="badge badge-destructive">Delete</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Success</h3>
+        <p>For successful operations</p>
+        <div style="margin-top: 1rem;">
+          <span class="badge badge-success">Success</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Warning</h3>
+        <p>For warnings and cautions</p>
+        <div style="margin-top: 1rem;">
+          <span class="badge badge-warning">Warning</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Info</h3>
+        <p>For informational messages</p>
+        <div style="margin-top: 1rem;">
+          <span class="badge badge-info">Info</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Token Reference</h2>
+    <div class="card">
+      <div class="token-list">
+        <div class="token-item">
+          <div class="token-swatch" style="background: hsl(var(--background));"></div>
+          <code>--background</code>
+        </div>
+        <div class="token-item">
+          <div class="token-swatch" style="background: hsl(var(--foreground));"></div>
+          <code>--foreground</code>
+        </div>
+        <div class="token-item">
+          <div class="token-swatch" style="background: hsl(var(--primary));"></div>
+          <code>--primary</code>
+        </div>
+        <div class="token-item">
+          <div class="token-swatch" style="background: hsl(var(--secondary));"></div>
+          <code>--secondary</code>
+        </div>
+        <div class="token-item">
+          <div class="token-swatch" style="background: hsl(var(--destructive));"></div>
+          <code>--destructive</code>
+        </div>
+        <div class="token-item">
+          <div class="token-swatch" style="background: hsl(var(--success));"></div>
+          <code>--success</code>
+        </div>
+        <div class="token-item">
+          <div class="token-swatch" style="background: hsl(var(--warning));"></div>
+          <code>--warning</code>
+        </div>
+        <div class="token-item">
+          <div class="token-swatch" style="background: hsl(var(--info));"></div>
+          <code>--info</code>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 2rem; padding: 1rem; border: 1px solid hsl(var(--border)); border-radius: var(--radius); opacity: 0.7;">
+      <p style="margin: 0; font-size: 0.875rem;">
+        <strong>Note:</strong> This demo shows how the token system works. All colors automatically adapt when switching between light and dark modes. No hardcoded colors are used - everything references CSS custom properties.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      document.getElementById('theme-status').textContent = 
+        `Current: ${isDark ? 'Dark' : 'Light'} Mode`;
+    }
+  </script>
+</body>
+</html>
