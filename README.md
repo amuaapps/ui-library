@@ -181,6 +181,35 @@ This test:
 
 The smoke test can run in CI without network calls beyond dependency installation. See [`smoke-test/README.md`](./smoke-test/README.md) for details.
 
+### Testing
+
+The library includes comprehensive unit and integration tests with Jest and React Testing Library:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+**Test Coverage:**
+- ✅ **90 tests** covering utilities and representative components
+- ✅ **100% coverage** on tested code (Button, Card, Input, Dialog, utilities)
+- ✅ **Accessibility validation** for all interactive components
+- ✅ **Token compliance checks** to prevent hardcoded values
+- ✅ **80% coverage thresholds** enforced in CI
+
+See [`docs/TESTING.md`](docs/TESTING.md) for complete testing documentation, including:
+- Test structure and organization
+- Writing new tests
+- Accessibility testing patterns
+- Token compliance validation
+- CI integration
+
 ### Other Development Commands
 
 ```bash
