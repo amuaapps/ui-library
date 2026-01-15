@@ -24,9 +24,10 @@ on:
         default: false
 
 permissions:
-  id-token: write   # Required for OIDC
+  id-token: write        # Required for OIDC
   contents: read
-  packages: write   # Required for npm publish
+  packages: write        # Required for npm publish
+  security-events: write # Required for CodeQL
 
 jobs:
   # Step 1: Test
