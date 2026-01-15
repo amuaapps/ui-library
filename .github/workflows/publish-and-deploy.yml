@@ -291,34 +291,35 @@ jobs:
           EOF
           
           # Deploy infrastructure
+          DEPLOYMENT_NAME="storybook-$(date +%Y%m%d-%H%M%S)"
           az deployment group create \
             --resource-group "$RG" \
             --template-file main.bicep \
             --parameters parameters.generated.json \
-            --name "deploy-$(date +%Y%m%d-%H%M%S)"
+            --name "$DEPLOYMENT_NAME"
           
-          # Get outputs
+          # Get outputs using the deployment name
           GREEN_ACCOUNT=$(az deployment group show \
             --resource-group "$RG" \
-            --name main \
+            --name "$DEPLOYMENT_NAME" \
             --query 'properties.outputs.uploadTargetGreen.value' \
             --output tsv)
           
           GREEN_URL=$(az deployment group show \
             --resource-group "$RG" \
-            --name main \
+            --name "$DEPLOYMENT_NAME" \
             --query 'properties.outputs.storybookUrlGreen.value' \
             --output tsv)
           
           CDN_PROFILE=$(az deployment group show \
             --resource-group "$RG" \
-            --name main \
+            --name "$DEPLOYMENT_NAME" \
             --query 'properties.outputs.cdnProfileName.value' \
             --output tsv 2>/dev/null || echo "")
           
           CDN_ENDPOINT=$(az deployment group show \
             --resource-group "$RG" \
-            --name main \
+            --name "$DEPLOYMENT_NAME" \
             --query 'properties.outputs.cdnEndpointName.value' \
             --output tsv 2>/dev/null || echo "")
           
