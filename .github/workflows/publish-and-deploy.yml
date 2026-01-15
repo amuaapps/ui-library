@@ -197,7 +197,6 @@ jobs:
           path: dist/
       
       - name: Publish to npm
-        if: steps.version-check.outputs.changed == 'true' || github.event.inputs.force_publish == 'true'
         run: npm publish --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
