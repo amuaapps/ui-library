@@ -1,0 +1,124 @@
+name: Infrastructure Lint
+
+on:
+  pull_request:
+    paths:
+      - 'adapters/aws/**/*.tf'
+      - 'adapters/aws/**/*.hcl'
+      - 'adapters/azure/**/*.bicep'
+      - 'adapters/azure/**/*.json'
+  push:
+    branches:
+      - main
+    paths:
+      - 'adapters/aws/**/*.tf'
+      - 'adapters/aws/**/*.hcl'
+      - 'adapters/azure/**/*.bicep'
+      - 'adapters/azure/**/*.json'
+
+jobs:
+  terraform-lint:
+    name: Terraform Lint (AWS)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+      
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: adapters/aws/storybook/terraform
+      
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: adapters/aws/storybook/terraform
+      
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: adapters/aws/storybook/terraform
+      
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.50.0
+      
+      - name: TFLint Init
+        run: tflint --init
+        working-directory: adapters/aws/storybook/terraform
+      
+      - name: Run TFLint
+        run: tflint
+        working-directory: adapters/aws/storybook/terraform
+      
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: adapters/aws/storybook/terraform
+          config_file: adapters/aws/storybook/terraform/.checkov.yml
+          soft_fail: false
+          output_format: cli
+          quiet: false
+
+  bicep-lint:
+    name: Bicep Lint (Azure)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Azure CLI
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        continue-on-error: true
+      
+      - name: Install Bicep
+        run: az bicep install
+      
+      - name: Bicep Build
+        run: az bicep build --file main.bicep
+        working-directory: adapters/azure/storybook/bicep
+      
+      - name: Bicep Lint
+        run: az bicep lint --file main.bicep
+        working-directory: adapters/azure/storybook/bicep
+      
+      - name: Build ARM Template for Checkov
+        run: az bicep build --file main.bicep --outfile main.json
+        working-directory: adapters/azure/storybook/bicep
+      
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          file: adapters/azure/storybook/bicep/main.json
+          framework: arm
+          soft_fail: false
+          output_format: cli
+          quiet: false
+      
+      - name: Cleanup
+        if: always()
+        run: rm -f main.json
+        working-directory: adapters/azure/storybook/bicep
+
+  summary:
+    name: Lint Summary
+    runs-on: ubuntu-latest
+    needs: [terraform-lint, bicep-lint]
+    if: always()
+    
+    steps:
+      - name: Check Results
+        run: |
+          if [ "${{ needs.terraform-lint.result }}" != "success" ] || [ "${{ needs.bicep-lint.result }}" != "success" ]; then
+            echo "❌ Infrastructure linting failed"
+            exit 1
+          else
+            echo "✅ All infrastructure linting checks passed"
+          fi

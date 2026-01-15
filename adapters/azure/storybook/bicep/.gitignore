@@ -1,0 +1,10 @@
+# Bicep build outputs
+*.json
+!parameters.example.json
+!examples/*.parameters.json
+
+# Azure CLI outputs
+*.log
+
+# Deployment outputs
+deployment-outputs.json

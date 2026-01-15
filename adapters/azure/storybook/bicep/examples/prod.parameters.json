@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectName": {
+      "value": "ui-library"
+    },
+    "environment": {
+      "value": "prod"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "enableBlueGreen": {
+      "value": true
+    },
+    "enableCdn": {
+      "value": true
+    },
+    "customDomainName": {
+      "value": "storybook.example.com"
+    },
+    "dnsZoneResourceId": {
+      "value": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/rg-dns/providers/Microsoft.Network/dnszones/example.com"
+    },
+    "retentionPolicyDays": {
+      "value": 90
+    },
+    "tags": {
+      "value": {
+        "Environment": "Production",
+        "ManagedBy": "Bicep",
+        "Project": "UI Library",
+        "CostCenter": "Engineering"
+      }
+    },
+    "activeEnvironment": {
+      "value": "blue"
+    }
+  }
+}

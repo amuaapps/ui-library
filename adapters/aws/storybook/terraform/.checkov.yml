@@ -1,0 +1,42 @@
+# Checkov configuration for security scanning
+# https://www.checkov.io/
+
+# Directories to scan
+directory:
+  - .
+
+# Output format
+output: cli
+
+# Compact output
+compact: true
+
+# Quiet mode (only show failed checks)
+quiet: false
+
+# Framework to scan
+framework:
+  - terraform
+
+# Skip checks that are not applicable or intentional design decisions
+skip-check:
+  # S3 bucket logging - not required for static website hosting
+  - CKV_AWS_18
+  
+  # S3 bucket versioning - we enable this, but checkov may flag it differently
+  # - CKV_AWS_21
+  
+  # CloudFront geo restriction - not required for public documentation
+  - CKV_AWS_68
+  
+  # CloudFront WAF - not required for static documentation site
+  - CKV_AWS_68
+  
+  # S3 bucket MFA delete - not required for dev environments
+  - CKV_AWS_19
+
+# Soft fail mode (don't exit with error code)
+soft-fail: false
+
+# Download external modules
+download-external-modules: false
