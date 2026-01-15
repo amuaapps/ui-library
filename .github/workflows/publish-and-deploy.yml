@@ -253,8 +253,16 @@ jobs:
           echo "Resource Group: $RG"
           echo "Region: $REGION"
           
-          # Create resource group
-          az group create --name "$RG" --location "$REGION"
+          # Create resource group if it doesn't exist
+          if ! az group show --name "$RG" &> /dev/null; then
+            echo "Creating resource group $RG..."
+            az group create --name "$RG" --location "$REGION" || {
+              echo "Warning: Could not create resource group. It may already exist or you may need Contributor role at subscription level."
+              echo "Proceeding with deployment assuming resource group exists..."
+            }
+          else
+            echo "Resource group $RG already exists"
+          fi
           
           # Generate parameters
           cd adapters/azure/storybook/bicep
