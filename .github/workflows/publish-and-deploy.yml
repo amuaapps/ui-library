@@ -196,11 +196,14 @@ jobs:
           name: library-dist
           path: dist/
       
+      - name: Remove prepare script
+        run: |
+          node -e "const pkg = require('./package.json'); delete pkg.scripts.prepare; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+      
       - name: Publish to npm
-        run: npm publish --ignore-scripts
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          HUSKY: 0
       
       - name: Create Git Tag
         if: needs.build.outputs.environment == 'prod'
