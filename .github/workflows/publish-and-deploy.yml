@@ -299,6 +299,11 @@ jobs:
             --name "$DEPLOYMENT_NAME"
           
           # Get outputs using the deployment name
+          BLUE_ACCOUNT=$(az deployment group show \
+            --resource-group "$RG" \
+            --name "$DEPLOYMENT_NAME" \
+            --query 'properties.outputs.uploadTargetBlue.value' \
+            --output tsv)
           GREEN_ACCOUNT=$(az deployment group show \
             --resource-group "$RG" \
             --name "$DEPLOYMENT_NAME" \
@@ -322,6 +327,20 @@ jobs:
             --name "$DEPLOYMENT_NAME" \
             --query 'properties.outputs.cdnEndpointName.value' \
             --output tsv 2>/dev/null || echo "")
+          
+          # Enable static website hosting on both storage accounts
+          echo "Enabling static website hosting..."
+          az storage blob service-properties update \
+            --account-name "$BLUE_ACCOUNT" \
+            --static-website \
+            --404-document index.html \
+            --index-document index.html
+          
+          az storage blob service-properties update \
+            --account-name "$GREEN_ACCOUNT" \
+            --static-website \
+            --404-document index.html \
+            --index-document index.html
           
           echo "green_account=$GREEN_ACCOUNT" >> $GITHUB_OUTPUT
           echo "green_url=$GREEN_URL" >> $GITHUB_OUTPUT
