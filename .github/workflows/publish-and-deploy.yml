@@ -200,6 +200,7 @@ jobs:
         run: npm publish --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          HUSKY: 0
       
       - name: Create Git Tag
         if: needs.build.outputs.environment == 'prod'
