@@ -426,10 +426,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Wait for CDN Propagation
+      - name: Wait for Storage Propagation
         run: |
-          echo "Waiting 60 seconds for CDN propagation..."
-          sleep 60
+          echo "Waiting 10 seconds for storage propagation..."
+          sleep 10
       
       - name: Verify GREEN Deployment
         run: |
