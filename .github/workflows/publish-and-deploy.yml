@@ -114,22 +114,41 @@ jobs:
         id: version-check
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
           echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           
-          # Get version from previous commit
-          git checkout HEAD~1 -- package.json 2>/dev/null || true
-          PREVIOUS_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
-          git checkout HEAD -- package.json
+          # Get latest published version from npm registry
+          NPM_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "0.0.0")
           
           echo "Current version: $CURRENT_VERSION"
-          echo "Previous version: $PREVIOUS_VERSION"
+          echo "Published version: $NPM_VERSION"
           
-          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+          # Compare versions using node semver logic
+          SHOULD_PUBLISH=$(node -e "
+            const current = '$CURRENT_VERSION';
+            const published = '$NPM_VERSION';
+            const currentParts = current.split('.').map(Number);
+            const publishedParts = published.split('.').map(Number);
+            
+            for (let i = 0; i < 3; i++) {
+              if (currentParts[i] > publishedParts[i]) {
+                console.log('true');
+                process.exit(0);
+              }
+              if (currentParts[i] < publishedParts[i]) {
+                console.log('false');
+                process.exit(0);
+              }
+            }
+            console.log('false');
+          ")
+          
+          if [ "$SHOULD_PUBLISH" = "true" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "✓ Version bumped: $PREVIOUS_VERSION → $CURRENT_VERSION"
+            echo "✓ Version bump detected: $NPM_VERSION → $CURRENT_VERSION"
           else
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "ℹ Version unchanged: $CURRENT_VERSION"
+            echo "No version bump detected (current: $CURRENT_VERSION, published: $NPM_VERSION)"
           fi
       
       - name: Build Library
