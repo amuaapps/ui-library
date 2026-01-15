@@ -188,7 +188,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@amuaapps'
       
       - name: Download Library Artifacts
         uses: actions/download-artifact@v4
