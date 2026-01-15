@@ -274,7 +274,7 @@ jobs:
               "environment": { "value": "${{ needs.build.outputs.environment }}" },
               "location": { "value": "$REGION" },
               "enableBlueGreen": { "value": true },
-              "enableCdn": { "value": true },
+              "enableCdn": { "value": false },
               "customDomainName": { "value": "${{ vars.AZURE_CUSTOM_DOMAIN || '' }}" },
               "dnsZoneResourceId": { "value": "${{ vars.AZURE_DNS_ZONE_ID || '' }}" },
               "retentionPolicyDays": { "value": 30 },
