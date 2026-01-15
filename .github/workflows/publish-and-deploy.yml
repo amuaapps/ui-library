@@ -336,13 +336,14 @@ jobs:
           if [ -n "$CDN_PROFILE" ] && [ -n "$CDN_ENDPOINT" ]; then
             ./adapters/shared/storybook/upload-azure.sh \
               -a "$GREEN_ACCOUNT" \
+              -g "$RG" \
               --purge-cdn \
               --cdn-profile "$CDN_PROFILE" \
-              --cdn-endpoint "$CDN_ENDPOINT" \
-              -g "$RG"
+              --cdn-endpoint "$CDN_ENDPOINT"
           else
             ./adapters/shared/storybook/upload-azure.sh \
-              -a "$GREEN_ACCOUNT"
+              -a "$GREEN_ACCOUNT" \
+              -g "$RG"
           fi
           
           echo "✓ Deployed to Azure GREEN environment"
