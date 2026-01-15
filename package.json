@@ -2,6 +2,9 @@
   "name": "@amuaapps/ui-library",
   "version": "1.0.0",
   "description": "Amua Apps UI Library - Component library for building modern web applications",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
