@@ -6,6 +6,7 @@ on:
       - main
       - staging
       - dev
+      - develop
   workflow_dispatch:
     inputs:
       environment:
