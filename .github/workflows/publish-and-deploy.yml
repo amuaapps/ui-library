@@ -199,6 +199,7 @@ jobs:
     outputs:
       provider: ${{ steps.detect-provider.outputs.provider }}
       green_url: ${{ steps.deploy-azure.outputs.green_url || steps.deploy-aws.outputs.green_url }}
+      resource_group: ${{ steps.deploy-azure.outputs.resource_group || steps.deploy-aws.outputs.resource_group }}
     
     steps:
       - name: Checkout
