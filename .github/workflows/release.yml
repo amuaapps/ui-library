@@ -1,0 +1,386 @@
+name: Release Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+jobs:
+  # ============================================================================
+  # STAGE 1: TEST
+  # ============================================================================
+  test:
+    name: Stage 1 - Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npm run typecheck
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Run token compliance check
+        run: npm run check:tokens
+
+      - name: Build Storybook
+        run: npm run build-storybook
+
+      - name: Verify Storybook build
+        run: |
+          if [ ! -d "storybook-static" ]; then
+            echo "Error: Storybook build failed - storybook-static directory not found"
+            exit 1
+          fi
+          if [ ! -f "storybook-static/index.html" ]; then
+            echo "Error: Storybook build failed - index.html not found"
+            exit 1
+          fi
+          echo "Storybook build verified successfully"
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: false
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          fail_ci_if_error: false
+
+  # CodeQL security scanning
+  codeql:
+    name: Stage 1 - CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # ============================================================================
+  # STAGE 2: BUILD
+  # ============================================================================
+  build:
+    name: Stage 2 - Build
+    runs-on: ubuntu-latest
+    needs: [test, codeql]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build library
+        run: npm run build
+
+      - name: Verify build artifacts
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Error: Build failed - dist directory not found"
+            exit 1
+          fi
+          if [ ! -f "dist/index.js" ]; then
+            echo "Error: Build failed - index.js not found"
+            exit 1
+          fi
+          if [ ! -f "dist/index.d.ts" ]; then
+            echo "Error: Build failed - index.d.ts not found"
+            exit 1
+          fi
+          echo "Build artifacts verified successfully"
+
+      - name: Pack for publishing
+        run: npm pack
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            package.json
+            README.md
+            LICENSE
+            *.tgz
+          retention-days: 7
+
+  # ============================================================================
+  # STAGE 3: DEPLOY GREEN (next dist-tag)
+  # ============================================================================
+  deploy-green:
+    name: Stage 3 - Deploy GREEN (next)
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    outputs:
+      version: ${{ steps.publish.outputs.version }}
+      package-name: ${{ steps.publish.outputs.package-name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@amuaapps'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Configure package for GitHub Packages
+        run: |
+          # Ensure publishConfig is set for GitHub Packages
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.publishConfig = {
+            registry: 'https://npm.pkg.github.com',
+            access: 'public'
+          };
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+      - name: Determine version strategy
+        id: version
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          if [ "$BRANCH_NAME" = "main" ]; then
+            # Main branch: use current version with -next suffix
+            NEW_VERSION="${CURRENT_VERSION}-next.${GITHUB_RUN_NUMBER}"
+          else
+            # Develop branch: use current version with -dev suffix
+            NEW_VERSION="${CURRENT_VERSION}-dev.${GITHUB_RUN_NUMBER}"
+          fi
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $NEW_VERSION to GREEN channel (next)"
+
+      - name: Update package version
+        run: npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+
+      - name: Publish to GREEN channel (next dist-tag)
+        id: publish
+        run: |
+          npm publish --tag next --access public
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          echo "package-name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Published $PACKAGE_NAME@$VERSION to GREEN channel (next)"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create deployment marker
+        run: |
+          echo "GREEN_VERSION=${{ steps.publish.outputs.version }}" >> deployment.txt
+          echo "GREEN_PACKAGE=${{ steps.publish.outputs.package-name }}" >> deployment.txt
+          echo "DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> deployment.txt
+
+      - name: Upload deployment info
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-info
+          path: deployment.txt
+          retention-days: 7
+
+  # ============================================================================
+  # STAGE 4: TEST INFRA + SWITCH BLUE/GREEN
+  # ============================================================================
+  test-and-promote:
+    name: Stage 4 - Test Infra & Promote to BLUE
+    runs-on: ubuntu-latest
+    needs: deploy-green
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@amuaapps'
+
+      - name: Download deployment info
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-info
+
+      - name: Load deployment info
+        id: deployment
+        run: |
+          source deployment.txt
+          echo "version=$GREEN_VERSION" >> $GITHUB_OUTPUT
+          echo "package-name=$GREEN_PACKAGE" >> $GITHUB_OUTPUT
+          echo "Testing GREEN version: $GREEN_VERSION"
+
+      - name: Authenticate with GitHub Packages
+        run: |
+          echo "@amuaapps:registry=https://npm.pkg.github.com" > ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+
+      - name: Run consumer smoke test with GREEN version
+        run: |
+          cd smoke-test
+          
+          # Update package.json to use GREEN version from GitHub Packages
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.dependencies['${{ steps.deployment.outputs.package-name }}'] = '${{ steps.deployment.outputs.version }}';
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          
+          # Install GREEN version
+          npm install
+          
+          # Run smoke test
+          npm test
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify package integrity
+        run: |
+          # Download the published package
+          npm pack ${{ steps.deployment.outputs.package-name }}@${{ steps.deployment.outputs.version }}
+          
+          # Extract and verify contents
+          tar -xzf *.tgz
+          
+          # Check required files exist
+          if [ ! -d "package/dist" ]; then
+            echo "Error: dist directory missing from package"
+            exit 1
+          fi
+          
+          if [ ! -f "package/package.json" ]; then
+            echo "Error: package.json missing from package"
+            exit 1
+          fi
+          
+          # Verify no secrets or sensitive files
+          if grep -r "SECRET\|PASSWORD\|API_KEY" package/ 2>/dev/null; then
+            echo "Error: Potential secrets found in package"
+            exit 1
+          fi
+          
+          echo "Package integrity verified successfully"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify no hardcoded values in published package
+        run: |
+          # Check dist files for hardcoded colors or values
+          if grep -r "#[0-9a-fA-F]\{3,6\}" package/dist/ 2>/dev/null | grep -v "sourceMappingURL"; then
+            echo "Warning: Hardcoded color values found in package"
+            # Non-blocking for now, but logged
+          fi
+          
+          echo "Token compliance check completed"
+
+      - name: Promote GREEN to BLUE (update latest dist-tag)
+        if: success()
+        run: |
+          npm dist-tag add ${{ steps.deployment.outputs.package-name }}@${{ steps.deployment.outputs.version }} latest
+          echo "Successfully promoted ${{ steps.deployment.outputs.version }} to BLUE (latest)"
+          echo "BLUE is now: ${{ steps.deployment.outputs.version }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release summary
+        if: success()
+        run: |
+          cat << EOF > release-summary.md
+          # Release Summary
+          
+          **Status:** ✅ Successfully promoted to BLUE (latest)
+          
+          **Package:** ${{ steps.deployment.outputs.package-name }}
+          **Version:** ${{ steps.deployment.outputs.version }}
+          **Dist-tags:**
+          - \`latest\` (BLUE): ${{ steps.deployment.outputs.version }}
+          - \`next\` (GREEN): ${{ steps.deployment.outputs.version }}
+          
+          **Stages Completed:**
+          - ✅ Stage 1: Test (lint, typecheck, tests, CodeQL, audit, token compliance, Storybook)
+          - ✅ Stage 2: Build (artifacts produced and stored)
+          - ✅ Stage 3: Deploy GREEN (published to \`next\` dist-tag)
+          - ✅ Stage 4: Test Infra & Promote (smoke test passed, promoted to \`latest\`)
+          
+          **Installation:**
+          \`\`\`bash
+          npm install ${{ steps.deployment.outputs.package-name }}@latest
+          \`\`\`
+          EOF
+          
+          cat release-summary.md
+
+      - name: Upload release summary
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-summary
+          path: release-summary.md
+          retention-days: 90
+
+      - name: Rollback notice
+        if: failure()
+        run: |
+          echo "❌ Stage 4 failed - GREEN version remains on 'next' dist-tag only"
+          echo "BLUE (latest) was NOT updated and remains stable"
+          echo "GREEN version ${{ steps.deployment.outputs.version }} is available on 'next' dist-tag for debugging"
+          exit 1

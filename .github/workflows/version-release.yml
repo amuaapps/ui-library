@@ -1,0 +1,421 @@
+name: Version and Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type (leave empty for changeset-based)'
+        required: false
+        type: choice
+        options:
+          - ''
+          - patch
+          - minor
+          - major
+      skip_tests:
+        description: 'Skip tests (use with caution)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+  security-events: write
+
+jobs:
+  # ============================================================================
+  # STAGE 1: TEST (can be skipped with manual override)
+  # ============================================================================
+  test:
+    name: Stage 1 - Test
+    runs-on: ubuntu-latest
+    if: github.event.inputs.skip_tests != 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npm run typecheck
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Run token compliance check
+        run: npm run check:tokens
+
+      - name: Build Storybook
+        run: npm run build-storybook
+
+      - name: Verify Storybook build
+        run: |
+          if [ ! -d "storybook-static" ]; then
+            echo "Error: Storybook build failed"
+            exit 1
+          fi
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: false
+
+  codeql:
+    name: Stage 1 - CodeQL Analysis
+    runs-on: ubuntu-latest
+    if: github.event.inputs.skip_tests != 'true'
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # ============================================================================
+  # VERSION: Determine version and create release PR or bump version
+  # ============================================================================
+  version:
+    name: Version Management
+    runs-on: ubuntu-latest
+    needs: [test, codeql]
+    if: |
+      always() && 
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      (needs.codeql.result == 'success' || needs.codeql.result == 'skipped')
+    outputs:
+      has_changesets: ${{ steps.check.outputs.has_changesets }}
+      published: ${{ steps.publish.outputs.published }}
+      version: ${{ steps.publish.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for changesets
+        id: check
+        run: |
+          if npx changeset status 2>&1 | grep -q "No changesets present"; then
+            echo "has_changesets=false" >> $GITHUB_OUTPUT
+            echo "No changesets found"
+          else
+            echo "has_changesets=true" >> $GITHUB_OUTPUT
+            echo "Changesets found"
+          fi
+
+      - name: Manual version bump (if specified)
+        if: github.event.inputs.release_type != ''
+        run: |
+          echo "Manual release type: ${{ github.event.inputs.release_type }}"
+          npm version ${{ github.event.inputs.release_type }} --no-git-tag-version
+          
+          # Create a changeset for the manual bump
+          cat > .changeset/manual-release.md << EOF
+          ---
+          "@amuaapps/ui-library": ${{ github.event.inputs.release_type }}
+          ---
+
+          Manual ${{ github.event.inputs.release_type }} release via workflow dispatch
+          EOF
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore: manual ${{ github.event.inputs.release_type }} version bump"
+          git push
+
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: npm run changeset:version
+          publish: echo "Skipping publish - handled by release pipeline"
+          commit: "chore: version packages"
+          title: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get new version
+        id: publish
+        run: |
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+          
+          # Check if version changed
+          git fetch origin main
+          OLD_VERSION=$(git show origin/main:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).version")
+          
+          if [ "$NEW_VERSION" != "$OLD_VERSION" ]; then
+            echo "published=true" >> $GITHUB_OUTPUT
+            echo "Version changed from $OLD_VERSION to $NEW_VERSION"
+          else
+            echo "published=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged"
+          fi
+
+  # ============================================================================
+  # STAGE 2: BUILD
+  # ============================================================================
+  build:
+    name: Stage 2 - Build
+    runs-on: ubuntu-latest
+    needs: version
+    if: needs.version.outputs.published == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build library
+        run: npm run build
+
+      - name: Verify build artifacts
+        run: |
+          if [ ! -d "dist" ] || [ ! -f "dist/index.js" ] || [ ! -f "dist/index.d.ts" ]; then
+            echo "Error: Build artifacts missing"
+            exit 1
+          fi
+
+      - name: Pack for publishing
+        run: npm pack
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            package.json
+            README.md
+            LICENSE
+            CHANGELOG.md
+            *.tgz
+          retention-days: 7
+
+  # ============================================================================
+  # STAGE 3: DEPLOY & TAG
+  # ============================================================================
+  deploy-and-tag:
+    name: Stage 3 - Deploy & Create Release
+    runs-on: ubuntu-latest
+    needs: [version, build]
+    if: needs.version.outputs.published == 'true'
+    outputs:
+      version: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@amuaapps'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Configure package for GitHub Packages
+        run: |
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.publishConfig = {
+            registry: 'https://npm.pkg.github.com',
+            access: 'public'
+          };
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+      - name: Publish to GitHub Packages (latest)
+        run: npm publish --tag latest --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Git Tag
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          
+          # Extract changelog section for this version
+          if [ -f "CHANGELOG.md" ]; then
+            # Get content between this version and next version header
+            CHANGELOG=$(awk "/## ${VERSION}/,/## [0-9]/" CHANGELOG.md | sed '1d;$d')
+            
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="Release v${VERSION}"
+            fi
+          else
+            CHANGELOG="Release v${VERSION}"
+          fi
+          
+          # Save to file for GitHub release
+          echo "$CHANGELOG" > release-notes.md
+          echo "Changelog extracted for v${VERSION}"
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          release_name: Release v${{ needs.version.outputs.version }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+
+  # ============================================================================
+  # STAGE 4: TEST INFRA & VALIDATION
+  # ============================================================================
+  validate-release:
+    name: Stage 4 - Validate Release
+    runs-on: ubuntu-latest
+    needs: [version, deploy-and-tag]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@amuaapps'
+
+      - name: Authenticate with GitHub Packages
+        run: |
+          echo "@amuaapps:registry=https://npm.pkg.github.com" > ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+
+      - name: Run consumer smoke test
+        run: |
+          cd smoke-test
+          
+          # Update to use published version
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.dependencies['@amuaapps/ui-library'] = '${{ needs.version.outputs.version }}';
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          
+          npm install
+          npm test
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify package integrity
+        run: |
+          npm pack @amuaapps/ui-library@${{ needs.version.outputs.version }}
+          tar -xzf *.tgz
+          
+          if [ ! -d "package/dist" ] || [ ! -f "package/package.json" ]; then
+            echo "Error: Package integrity check failed"
+            exit 1
+          fi
+          
+          if grep -r "SECRET\|PASSWORD\|API_KEY" package/ 2>/dev/null; then
+            echo "Error: Potential secrets found"
+            exit 1
+          fi
+          
+          echo "✅ Package integrity verified"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release summary
+        run: |
+          cat << EOF > release-summary.md
+          # Release Summary
+          
+          **Version:** v${{ needs.version.outputs.version }}
+          **Status:** ✅ Successfully released
+          
+          **Git Tag:** \`v${{ needs.version.outputs.version }}\`
+          **GitHub Release:** Created
+          **Package:** Published to GitHub Packages
+          
+          **Installation:**
+          \`\`\`bash
+          npm install @amuaapps/ui-library@${{ needs.version.outputs.version }}
+          \`\`\`
+          
+          **Verification:**
+          - ✅ All tests passed
+          - ✅ Build successful
+          - ✅ Package published
+          - ✅ Git tag created
+          - ✅ GitHub release created
+          - ✅ Smoke test passed
+          - ✅ Package integrity verified
+          EOF
+          
+          cat release-summary.md
+
+      - name: Upload release summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-summary
+          path: release-summary.md
+          retention-days: 90

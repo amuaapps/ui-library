@@ -45,6 +45,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "check:tokens": "node scripts/check-tokens.cjs",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "changeset:status": "changeset status --verbose",
     "prepare": "husky install",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
@@ -98,6 +103,8 @@
     "tailwind-merge": "^2.2.0"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.2",
+    "@changesets/cli": "^2.29.8",
     "@storybook/react-vite": "^10.1.11",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",

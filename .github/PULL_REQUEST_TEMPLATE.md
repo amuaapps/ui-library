@@ -1,0 +1,39 @@
+## Description
+
+<!-- Describe your changes in detail -->
+
+## Type of Change
+
+- [ ] Bug fix (patch)
+- [ ] New feature (minor)
+- [ ] Breaking change (major)
+- [ ] Documentation update
+- [ ] CI/CD or tooling change
+
+## Changeset
+
+- [ ] I have added a changeset (`npm run changeset`)
+- [ ] This PR doesn't need a changeset (add `skip-changeset` label)
+
+## Checklist
+
+- [ ] My code follows the project's coding standards
+- [ ] I have performed a self-review of my code
+- [ ] I have commented my code where necessary
+- [ ] I have updated the documentation accordingly
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix/feature works
+- [ ] New and existing unit tests pass locally
+- [ ] Any dependent changes have been merged
+
+## Testing
+
+<!-- Describe how you tested your changes -->
+
+## Screenshots (if applicable)
+
+<!-- Add screenshots to help explain your changes -->
+
+## Additional Notes
+
+<!-- Any additional information that reviewers should know -->
