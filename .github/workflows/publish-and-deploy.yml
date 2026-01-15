@@ -472,10 +472,31 @@ jobs:
         run: |
           cd adapters/azure/storybook/bicep
           
-          # Create parameters.json if it doesn't exist (use the generated one from deploy)
-          if [ ! -f parameters.json ] && [ -f parameters.generated.json ]; then
-            cp parameters.generated.json parameters.json
-          fi
+          # Create parameters.json for the switch script
+          cat > parameters.json <<EOF
+          {
+            "\$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+              "projectName": { "value": "ui-library" },
+              "environment": { "value": "${{ needs.build.outputs.environment }}" },
+              "location": { "value": "${{ vars.AZURE_REGION || 'eastus' }}" },
+              "enableBlueGreen": { "value": true },
+              "enableCdn": { "value": false },
+              "customDomainName": { "value": "${{ vars.AZURE_CUSTOM_DOMAIN || '' }}" },
+              "dnsZoneResourceId": { "value": "${{ vars.AZURE_DNS_ZONE_ID || '' }}" },
+              "retentionPolicyDays": { "value": 30 },
+              "tags": {
+                "value": {
+                  "Project": "UI Library",
+                  "Environment": "${{ needs.build.outputs.environment }}",
+                  "ManagedBy": "GitHub Actions"
+                }
+              },
+              "activeEnvironment": { "value": "green" }
+            }
+          }
+          EOF
           
           chmod +x switch.sh
           ./switch.sh green -g "${{ needs.deploy.outputs.resource_group }}" --auto-approve
