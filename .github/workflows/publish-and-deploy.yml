@@ -201,6 +201,11 @@ jobs:
         run: |
           node -e "const pkg = require('./package.json'); delete pkg.scripts.prepare; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
       
+      - name: Configure npm authentication
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
+      
       - name: Publish to GitHub Packages
         run: npm publish
         env:
