@@ -478,7 +478,7 @@ jobs:
           fi
           
           chmod +x switch.sh
-          ./switch.sh green -g "${{ needs.deploy.outputs.resource_group }}"
+          ./switch.sh green -g "${{ needs.deploy.outputs.resource_group }}" --auto-approve
       
       # AWS Switch
       - name: Configure AWS Credentials (OIDC)
