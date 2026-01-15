@@ -469,21 +469,15 @@ jobs:
       - name: Switch to GREEN (Azure)
         if: needs.deploy.outputs.provider == 'azure'
         run: |
-          if [ -n "${{ needs.deploy.outputs.resource_group }}" ]; then
-            cd adapters/azure/storybook/bicep
-            
-            # Create parameters.json if it doesn't exist (use the generated one from deploy)
-            if [ ! -f parameters.json ] && [ -f parameters.generated.json ]; then
-              cp parameters.generated.json parameters.json
-            fi
-            
-            chmod +x switch.sh
-            ./switch.sh green "${{ needs.deploy.outputs.resource_group }}"
+          cd adapters/azure/storybook/bicep
+          
+          # Create parameters.json if it doesn't exist (use the generated one from deploy)
+          if [ ! -f parameters.json ] && [ -f parameters.generated.json ]; then
+            cp parameters.generated.json parameters.json
           fi
           
-          cd adapters/azure/storybook/bicep
           chmod +x switch.sh
-          ./switch.sh green -g "$RG" --auto-approve
+          ./switch.sh green "${{ needs.deploy.outputs.resource_group }}"
       
       # AWS Switch
       - name: Configure AWS Credentials (OIDC)
