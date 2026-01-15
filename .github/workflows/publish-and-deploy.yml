@@ -253,15 +253,14 @@ jobs:
           echo "Resource Group: $RG"
           echo "Region: $REGION"
           
-          # Create resource group if it doesn't exist
-          if ! az group show --name "$RG" &> /dev/null; then
-            echo "Creating resource group $RG..."
-            az group create --name "$RG" --location "$REGION" || {
-              echo "Warning: Could not create resource group. It may already exist or you may need Contributor role at subscription level."
-              echo "Proceeding with deployment assuming resource group exists..."
-            }
+          # Verify resource group exists
+          if az group show --name "$RG" &> /dev/null; then
+            echo "✓ Resource group $RG exists"
           else
-            echo "Resource group $RG already exists"
+            echo "❌ Error: Resource group $RG does not exist"
+            echo "Please create the resource group first:"
+            echo "  az group create --name $RG --location $REGION"
+            exit 1
           fi
           
           # Generate parameters
