@@ -81,7 +81,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       
       - name: Install Dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
       
       - name: Detect Environment
         id: env-detect
