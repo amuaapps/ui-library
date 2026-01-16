@@ -43,7 +43,7 @@ const BreadcrumbLink = React.forwardRef<
   React.ComponentPropsWithoutRef<"a"> & {
     asChild?: boolean;
   }
->(({ asChild, className, ...props }, ref) => {
+>(({ asChild: _asChild = false, className, ...props }, ref) => {
   const Comp = "a";
 
   return (

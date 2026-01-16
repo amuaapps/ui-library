@@ -66,6 +66,7 @@ const TableRow = React.forwardRef<
 ));
 TableRow.displayName = "TableRow";
 
+/* eslint-disable react/prop-types */
 const TableHead = React.forwardRef<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement>
@@ -80,6 +81,7 @@ const TableHead = React.forwardRef<
   />
 ));
 TableHead.displayName = "TableHead";
+/* eslint-disable react/prop-types */
 
 const TableCell = React.forwardRef<
   HTMLTableCellElement,

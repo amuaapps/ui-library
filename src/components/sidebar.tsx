@@ -91,6 +91,7 @@ const SidebarNavItem = React.forwardRef<
   HTMLAnchorElement,
   React.AnchorHTMLAttributes<HTMLAnchorElement> & {
     active?: boolean;
+/* eslint-disable react/prop-types */
   }
 >(({ className, active, ...props }, ref) => (
   <a

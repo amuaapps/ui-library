@@ -9,6 +9,10 @@ import {
   getFilteredRowModel,
   ColumnFiltersState,
   getPaginationRowModel,
+  HeaderGroup,
+  Header,
+  Row,
+  Cell,
 } from "@tanstack/react-table";
 
 import {
@@ -70,9 +74,9 @@ export function DataTable<TData, TValue>({
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup: any) => (
+            {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header: any) => {
+                {headerGroup.headers.map((header: Header<TData, unknown>) => {
                   return (
                     <TableHead key={header.id}>
                       {header.isPlaceholder
@@ -89,12 +93,12 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row: any) => (
+              table.getRowModel().rows.map((row: Row<TData>) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
-                  {row.getVisibleCells().map((cell: any) => (
+                  {row.getVisibleCells().map((cell: Cell<TData, unknown>) => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,

@@ -13,7 +13,7 @@ import {
 import { cn } from "../lib/utils";
 
 export interface ChartProps extends React.HTMLAttributes<HTMLDivElement> {
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, string | number>>;
   dataKey?: string;
   xAxisKey?: string;
   height?: number;
