@@ -54,7 +54,7 @@ function ProfileForm() {
         <FormField
           control={form.control}
           name="username"
-          render={({ field }) => (
+          render={({ field }: any) => (
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
@@ -70,7 +70,7 @@ function ProfileForm() {
         <FormField
           control={form.control}
           name="email"
-          render={({ field }) => (
+          render={({ field }: any) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>

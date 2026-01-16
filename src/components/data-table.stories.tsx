@@ -70,7 +70,7 @@ const columns: ColumnDef<Payment>[] = [
   {
     accessorKey: "amount",
     header: "Amount",
-    cell: ({ row }) => {
+    cell: ({ row }: any) => {
       const amount = parseFloat(row.getValue("amount"));
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
@@ -82,5 +82,10 @@ const columns: ColumnDef<Payment>[] = [
 ];
 
 export const Default: Story = {
-  render: () => <DataTable columns={columns} data={data} searchKey="email" />,
+  args: {
+    columns,
+    data,
+    searchKey: "email",
+  },
+  render: (args) => <DataTable {...args} />,
 };

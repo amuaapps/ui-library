@@ -23,15 +23,20 @@ const frameworks = [
 ];
 
 export const Default: Story = {
-  render: () => {
+  args: {
+    options: frameworks,
+    selected: [],
+    onChange: () => {},
+    placeholder: "Select frameworks...",
+  },
+  render: (args) => {
     const [selected, setSelected] = useState<string[]>([]);
     return (
       <div className="w-[400px]">
         <MultiSelect
-          options={frameworks}
+          {...args}
           selected={selected}
           onChange={setSelected}
-          placeholder="Select frameworks..."
         />
       </div>
     );

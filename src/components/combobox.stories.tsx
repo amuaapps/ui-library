@@ -23,15 +23,18 @@ const frameworks = [
 ];
 
 export const Default: Story = {
-  render: () => {
+  args: {
+    options: frameworks,
+    placeholder: "Select framework...",
+    searchPlaceholder: "Search framework...",
+  },
+  render: (args) => {
     const [value, setValue] = useState("");
     return (
       <Combobox
-        options={frameworks}
+        {...args}
         value={value}
         onValueChange={setValue}
-        placeholder="Select framework..."
-        searchPlaceholder="Search framework..."
       />
     );
   },
