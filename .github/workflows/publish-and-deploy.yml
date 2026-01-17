@@ -23,6 +23,11 @@ on:
         type: boolean
         default: false
 
+# Concurrency lock: only one release pipeline per branch/environment at a time
+concurrency:
+  group: release-${{ github.ref }}-${{ github.event.inputs.environment || 'auto' }}
+  cancel-in-progress: false
+
 permissions:
   id-token: write        # Required for OIDC
   contents: read
@@ -30,16 +35,16 @@ permissions:
   security-events: write # Required for CodeQL
 
 jobs:
-  # Step 1: Test
+  # Stage 1: Validate (lint, typecheck, format, tests, security)
   test:
-    name: Test
+    name: Validate Code Quality
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for version comparison
+          fetch-depth: 0
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -55,8 +60,17 @@ jobs:
       - name: Run Type Check
         run: npm run typecheck
       
-      - name: Run Tests
+      - name: Run Format Check
+        run: npm run format:check
+      
+      - name: Run Unit Tests
         run: npm test
+      
+      - name: Run Token Compliance Check
+        run: npm run check:tokens
+      
+      - name: Verify Storybook Build
+        run: npm run build-storybook
       
       - name: Run Security Audit
         run: npm audit --audit-level=high
@@ -70,14 +84,15 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-  # Step 2: Build
+  # Stage 2: Build once and upload artifacts
   build:
     name: Build Library & Storybook
     runs-on: ubuntu-latest
     needs: test
     outputs:
-      version_changed: ${{ steps.version-check.outputs.changed }}
-      current_version: ${{ steps.version-check.outputs.version }}
+      should_publish: ${{ steps.version-check.outputs.should_publish }}
+      base_version: ${{ steps.version-check.outputs.base_version }}
+      candidate_version: ${{ steps.version-check.outputs.candidate_version }}
       environment: ${{ steps.env-detect.outputs.environment }}
     
     steps:
@@ -90,7 +105,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@amuaapps'
       
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
@@ -104,51 +120,38 @@ jobs:
             case "${{ github.ref_name }}" in
               main) ENV="prod" ;;
               staging) ENV="staging" ;;
-              dev|*) ENV="dev" ;;
+              dev|develop|*) ENV="dev" ;;
             esac
           fi
           echo "environment=$ENV" >> $GITHUB_OUTPUT
           echo "Environment: $ENV"
       
-      - name: Check Version Bump
+      - name: Check Version and Generate Candidate
         id: version-check
         run: |
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          BASE_VERSION=$(node -p "require('./package.json').version")
           PACKAGE_NAME=$(node -p "require('./package.json').name")
-          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           
-          # Get latest published version from npm registry
-          NPM_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "0.0.0")
+          # Generate deterministic candidate version using run number
+          CANDIDATE_VERSION="${BASE_VERSION}-next.${{ github.run_number }}"
           
-          echo "Current version: $CURRENT_VERSION"
-          echo "Published version: $NPM_VERSION"
+          echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+          echo "candidate_version=$CANDIDATE_VERSION" >> $GITHUB_OUTPUT
           
-          # Compare versions using node semver logic
-          SHOULD_PUBLISH=$(node -e "
-            const current = '$CURRENT_VERSION';
-            const published = '$NPM_VERSION';
-            const currentParts = current.split('.').map(Number);
-            const publishedParts = published.split('.').map(Number);
-            
-            for (let i = 0; i < 3; i++) {
-              if (currentParts[i] > publishedParts[i]) {
-                console.log('true');
-                process.exit(0);
-              }
-              if (currentParts[i] < publishedParts[i]) {
-                console.log('false');
-                process.exit(0);
-              }
-            }
-            console.log('false');
-          ")
+          echo "Base version: $BASE_VERSION"
+          echo "Candidate version: $CANDIDATE_VERSION"
           
-          if [ "$SHOULD_PUBLISH" = "true" ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "✓ Version bump detected: $NPM_VERSION → $CURRENT_VERSION"
+          # Configure npm to query GitHub Packages
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          
+          # Check if this exact version already exists in GitHub Packages
+          if npm view "$PACKAGE_NAME@$CANDIDATE_VERSION" version 2>/dev/null; then
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Version $CANDIDATE_VERSION already exists - skipping publish"
           else
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No version bump detected (current: $CURRENT_VERSION, published: $NPM_VERSION)"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            echo "✓ Version $CANDIDATE_VERSION does not exist - will publish"
           fi
       
       - name: Build Library
@@ -158,7 +161,7 @@ jobs:
         run: npm run build-storybook
       
       - name: Upload Library Artifacts
-        if: steps.version-check.outputs.changed == 'true' || github.event.inputs.force_publish == 'true'
+        if: steps.version-check.outputs.should_publish == 'true' || github.event.inputs.force_publish == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: library-dist
@@ -172,13 +175,15 @@ jobs:
           path: storybook-static/
           retention-days: 7
 
-  # Step 3: Publish Library (Optional - only if version changed)
-  publish:
-    name: Publish Library to NPM
+  # Stage 3: Publish candidate version tagged as 'next' (never 'latest')
+  publish-candidate:
+    name: Publish Candidate (next)
     runs-on: ubuntu-latest
     needs: build
-    if: needs.build.outputs.version_changed == 'true' || github.event.inputs.force_publish == 'true'
+    if: needs.build.outputs.should_publish == 'true' || github.event.inputs.force_publish == 'true'
     environment: ${{ needs.build.outputs.environment }}
+    outputs:
+      published_version: ${{ steps.publish.outputs.version }}
     
     steps:
       - name: Checkout
@@ -197,17 +202,88 @@ jobs:
           name: library-dist
           path: dist/
       
-      - name: Remove prepare script
+      - name: Update package.json version
         run: |
-          node -e "const pkg = require('./package.json'); delete pkg.scripts.prepare; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+          # Update version to candidate version
+          node -e "
+            const pkg = require('./package.json');
+            pkg.version = '${{ needs.build.outputs.candidate_version }}';
+            delete pkg.scripts.prepare;
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo "Updated package.json to version ${{ needs.build.outputs.candidate_version }}"
       
       - name: Configure npm authentication
         run: |
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
           echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
       
-      - name: Publish to GitHub Packages
-        run: npm publish
+      - name: Publish to GitHub Packages (tagged as 'next')
+        id: publish
+        run: |
+          # Publish with 'next' tag (never 'latest')
+          npm publish --tag next
+          echo "version=${{ needs.build.outputs.candidate_version }}" >> $GITHUB_OUTPUT
+          echo "✓ Published ${{ needs.build.outputs.candidate_version }} with tag 'next'"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Stage 4: Smoke-test candidate and promote to 'latest' if it passes
+  smoke-test-and-promote:
+    name: Smoke Test & Promote
+    runs-on: ubuntu-latest
+    needs: [build, publish-candidate]
+    if: needs.build.outputs.should_publish == 'true' || github.event.inputs.force_publish == 'true'
+    environment: ${{ needs.build.outputs.environment }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@amuaapps'
+      
+      - name: Configure npm authentication
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
+      
+      - name: Install candidate version in smoke-test
+        run: |
+          cd smoke-test
+          # Remove existing library if present
+          npm uninstall @amuaapps/ui-library 2>/dev/null || true
+          # Install the 'next' tagged version (our candidate)
+          npm install @amuaapps/ui-library@next
+          INSTALLED_VERSION=$(node -p "require('./node_modules/@amuaapps/ui-library/package.json').version")
+          echo "Installed version: $INSTALLED_VERSION"
+          
+          # Verify it's the candidate version
+          if [ "$INSTALLED_VERSION" != "${{ needs.build.outputs.candidate_version }}" ]; then
+            echo "❌ Error: Expected version ${{ needs.build.outputs.candidate_version }}, got $INSTALLED_VERSION"
+            exit 1
+          fi
+          echo "✓ Candidate version installed successfully"
+      
+      - name: Run smoke-test build
+        run: |
+          cd smoke-test
+          npm test
+          echo "✓ Smoke test passed"
+      
+      - name: Promote to 'latest' dist-tag
+        run: |
+          # Only promote if smoke-test passed
+          npm dist-tag add @amuaapps/ui-library@${{ needs.build.outputs.candidate_version }} latest
+          echo "✓ Promoted ${{ needs.build.outputs.candidate_version }} to 'latest'"
+          
+          # Verify promotion
+          LATEST_VERSION=$(npm view @amuaapps/ui-library@latest version)
+          echo "Latest version is now: $LATEST_VERSION"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
@@ -216,10 +292,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ needs.build.outputs.current_version }}" -m "Release v${{ needs.build.outputs.current_version }}"
-          git push origin "v${{ needs.build.outputs.current_version }}"
+          git tag -a "v${{ needs.build.outputs.candidate_version }}" -m "Release v${{ needs.build.outputs.candidate_version }}"
+          git push origin "v${{ needs.build.outputs.candidate_version }}"
 
-  # Step 4: Deploy Storybook
+  # Step 5: Deploy Storybook
   deploy:
     name: Deploy Storybook
     runs-on: ubuntu-latest
@@ -464,7 +540,7 @@ jobs:
           echo "✓ Deployed to AWS GREEN environment"
           echo "URL: $GREEN_URL"
 
-  # Step 5: Verify & Switch Blue-Green
+  # Step 6: Verify & Switch Blue-Green
   switch:
     name: Verify & Switch to GREEN
     runs-on: ubuntu-latest
@@ -558,9 +634,18 @@ jobs:
           echo "**Environment:** ${{ needs.build.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "**Provider:** ${{ needs.deploy.outputs.provider }}" >> $GITHUB_STEP_SUMMARY
           echo "**Storybook URL:** ${{ needs.deploy.outputs.green_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [ "${{ needs.build.outputs.version_changed }}" = "true" ]; then
-            echo "**Library Version:** v${{ needs.build.outputs.current_version }} (published)" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.build.outputs.should_publish }}" = "true" ]; then
+            echo "### Library Release" >> $GITHUB_STEP_SUMMARY
+            echo "**Version:** ${{ needs.build.outputs.candidate_version }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Status:** ✅ Published and promoted to \`latest\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Smoke Test:** ✅ Passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Install with:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "npm install @amuaapps/ui-library@latest" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           else
-            echo "**Library:** No version change (not published)" >> $GITHUB_STEP_SUMMARY
+            echo "**Library:** No new version published" >> $GITHUB_STEP_SUMMARY
           fi
