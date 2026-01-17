@@ -1,9 +1,11 @@
-import { Button } from '@amuaapps/ui-library/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@amuaapps/ui-library/card';
-import { Alert, AlertTitle, AlertDescription } from '@amuaapps/ui-library/alert';
-import { Badge } from '@amuaapps/ui-library/badge';
-import { Input } from '@amuaapps/ui-library/input';
-import { Label } from '@amuaapps/ui-library/label';
+// Test root import (package.json exports ".")
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@amuaapps/ui-library';
+
+// Test subpath imports (package.json exports "./components/*")
+import { Alert, AlertTitle, AlertDescription } from '@amuaapps/ui-library/components/alert';
+import { Badge } from '@amuaapps/ui-library/components/badge';
+import { Input } from '@amuaapps/ui-library/components/input';
+import { Label } from '@amuaapps/ui-library/components/label';
 
 function App() {
   return (
@@ -21,8 +23,8 @@ function App() {
         <Alert>
           <AlertTitle>Smoke Test Active</AlertTitle>
           <AlertDescription>
-            This page verifies that the library can be imported via subpath exports
-            and that token CSS is correctly applied.
+            This page verifies that the library can be imported via root exports and subpath exports,
+            and that CSS loads correctly from the package-level styles export.
           </AlertDescription>
         </Alert>
 
@@ -30,7 +32,7 @@ function App() {
           <CardHeader>
             <CardTitle>Component Showcase</CardTitle>
             <CardDescription>
-              Testing various components imported via subpath exports
+              Testing Button and Card via root import, Alert/Badge/Input/Label via subpath imports
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

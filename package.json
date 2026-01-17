@@ -56,7 +56,7 @@
     "prepare": "husky install",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "smoke-test": "npm run build && cd smoke-test && npm install && npm test"
+    "smoke-test": "npm run build && npm pack && cd smoke-test && npm install ../amuaapps-ui-library-*.tgz && npm test"
   },
   "keywords": [
     "react",

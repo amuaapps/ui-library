@@ -72,24 +72,40 @@ const config: Config = {
 export default config;
 ```
 
-#### Option B: Use Library's Tailwind Config (Advanced)
+#### Option B: Manual Token Configuration
 
-If you want to match the library's exact theme configuration:
+If you need to customize the library's design tokens, you can manually configure them in your Tailwind config:
 
 ```typescript
 import type { Config } from 'tailwindcss';
-import libraryConfig from '@amuaapps/ui-library/tailwind.config';
 
 const config: Config = {
-  ...libraryConfig,
   content: [
     './src/**/*.{js,ts,jsx,tsx}',
     './node_modules/@amuaapps/ui-library/dist/**/*.{js,mjs}',
   ],
+  theme: {
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        // ... add other tokens as needed
+      },
+    },
+  },
 };
 
 export default config;
 ```
+
+The library's CSS already defines all CSS variables, so you only need to reference them in Tailwind.
 
 ### Step 3: Ensure CSS Custom Properties Are Available
 

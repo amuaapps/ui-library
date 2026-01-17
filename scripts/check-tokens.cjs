@@ -159,7 +159,7 @@ class TokenChecker {
       console.log('\n' + '='.repeat(80));
       console.log('❌ Token compliance check FAILED');
       console.log('Please use semantic design tokens instead of hardcoded values.');
-      console.log('See docs/TOKENS.md for guidance.\n');
+      console.log('See docs/TOKEN-COMPLIANCE.md for guidance.\n');
     } else {
       console.log('✅ No violations found!\n');
     }
