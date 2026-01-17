@@ -3,9 +3,9 @@
 output "storybook_url_active" {
   description = "Current active Storybook URL (points to blue or green based on active_environment)"
   value = var.enable_cdn ? (
-    var.custom_domain_name != null ? "https://${var.custom_domain_name}" : "https://${aws_cloudfront_distribution.storybook[0].domain_name}"
+    local.has_custom_domain ? "https://${var.custom_domain_name}" : "https://${aws_cloudfront_distribution.storybook[0].domain_name}"
     ) : (
-    var.active_environment == "green" && var.enable_blue_green ? aws_s3_bucket_website_configuration.green[0].website_endpoint : aws_s3_bucket_website_configuration.blue[0].website_endpoint
+    var.active_environment == "green" && var.enable_blue_green ? "http://${aws_s3_bucket_website_configuration.green[0].website_endpoint}" : "http://${aws_s3_bucket_website_configuration.blue[0].website_endpoint}"
   )
 }
 

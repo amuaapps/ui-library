@@ -11,6 +11,12 @@ locals {
   # Active bucket based on switch variable
   active_bucket_name = var.active_environment == "green" && var.enable_blue_green ? local.green_bucket_name : local.blue_bucket_name
   
+  # Custom domain configuration (treat empty string as null)
+  has_custom_domain = var.custom_domain_name != null && var.custom_domain_name != ""
+  
+  # Route53 zone ID (treat empty string as null)
+  route53_zone_id = var.route53_zone_id != null && var.route53_zone_id != "" ? var.route53_zone_id : null
+  
   # Common bucket configuration
   common_bucket_config = {
     force_destroy = var.environment == "dev" ? true : false
@@ -150,12 +156,9 @@ resource "aws_cloudfront_distribution" "storybook" {
 
   # Origin pointing to active bucket
   origin {
-    domain_name              = aws_s3_bucket.blue.bucket_regional_domain_name
+    domain_name              = var.active_environment == "green" && var.enable_blue_green ? aws_s3_bucket.green[0].bucket_regional_domain_name : aws_s3_bucket.blue.bucket_regional_domain_name
     origin_id                = var.active_environment == "green" && var.enable_blue_green ? "S3-${local.green_bucket_name}" : "S3-${local.blue_bucket_name}"
     origin_access_control_id = aws_cloudfront_origin_access_control.storybook[0].id
-
-    # Use green bucket if active_environment is green
-    domain_name = var.active_environment == "green" && var.enable_blue_green ? aws_s3_bucket.green[0].bucket_regional_domain_name : aws_s3_bucket.blue.bucket_regional_domain_name
   }
 
   # Default cache behavior
@@ -195,14 +198,14 @@ resource "aws_cloudfront_distribution" "storybook" {
 
   # SSL certificate
   viewer_certificate {
-    cloudfront_default_certificate = var.custom_domain_name == null
-    acm_certificate_arn            = var.custom_domain_name != null ? aws_acm_certificate.storybook[0].arn : null
-    ssl_support_method             = var.custom_domain_name != null ? "sni-only" : null
+    cloudfront_default_certificate = !local.has_custom_domain
+    acm_certificate_arn            = local.has_custom_domain ? aws_acm_certificate.storybook[0].arn : null
+    ssl_support_method             = local.has_custom_domain ? "sni-only" : null
     minimum_protocol_version       = "TLSv1.2_2021"
   }
 
   # Custom domain aliases
-  aliases = var.custom_domain_name != null ? [var.custom_domain_name] : []
+  aliases = local.has_custom_domain ? [var.custom_domain_name] : []
 }
 
 # S3 bucket policy to allow CloudFront OAC access to BLUE
@@ -261,9 +264,9 @@ resource "aws_s3_bucket_policy" "green_cloudfront" {
 
 # ACM Certificate for custom domain (must be in us-east-1 for CloudFront)
 resource "aws_acm_certificate" "storybook" {
-  count = var.custom_domain_name != null && var.enable_cdn ? 1 : 0
+  count = local.has_custom_domain && var.enable_cdn ? 1 : 0
 
-  provider          = aws
+  provider          = aws.us_east_1
   domain_name       = var.custom_domain_name
   validation_method = "DNS"
 
@@ -274,7 +277,7 @@ resource "aws_acm_certificate" "storybook" {
 
 # Route53 record for certificate validation
 resource "aws_route53_record" "cert_validation" {
-  for_each = var.custom_domain_name != null && var.enable_cdn ? {
+  for_each = local.has_custom_domain && var.enable_cdn && local.route53_zone_id != null ? {
     for dvo in aws_acm_certificate.storybook[0].domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
       record = dvo.resource_record_value
@@ -287,22 +290,23 @@ resource "aws_route53_record" "cert_validation" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = var.route53_zone_id
+  zone_id         = local.route53_zone_id
 }
 
 # Certificate validation
 resource "aws_acm_certificate_validation" "storybook" {
-  count = var.custom_domain_name != null && var.enable_cdn ? 1 : 0
+  count = local.has_custom_domain && var.enable_cdn && local.route53_zone_id != null ? 1 : 0
 
+  provider                = aws.us_east_1
   certificate_arn         = aws_acm_certificate.storybook[0].arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
 # Route53 record for custom domain
 resource "aws_route53_record" "storybook" {
-  count = var.custom_domain_name != null && var.enable_cdn ? 1 : 0
+  count = local.has_custom_domain && var.enable_cdn && local.route53_zone_id != null ? 1 : 0
 
-  zone_id = var.route53_zone_id
+  zone_id = local.route53_zone_id
   name    = var.custom_domain_name
   type    = "A"
 
