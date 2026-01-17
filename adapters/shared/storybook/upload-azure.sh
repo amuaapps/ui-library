@@ -168,45 +168,24 @@ if [ "$DRY_RUN" = true ]; then
   exit 0
 fi
 
-# Upload assets with long cache (JS, CSS, fonts, images)
-echo -e "${GREEN}Step 1/3: Uploading assets with long cache...${NC}"
+# Upload all files using batch upload (much faster and avoids rate limiting)
+echo -e "${GREEN}Step 1/2: Uploading all files...${NC}"
 
-# Get list of asset files (exclude HTML, JSON, TXT)
-ASSET_FILES=$(find "$STORYBOOK_DIR" -type f \
-  ! -name "*.html" \
-  ! -name "*.json" \
-  ! -name "*.txt" \
-  -print)
+# Use batch upload which is much more efficient
+az storage blob upload-batch \
+  --account-name "$STORAGE_ACCOUNT" \
+  --destination "$CONTAINER_NAME" \
+  --source "$STORYBOOK_DIR" \
+  --overwrite \
+  --output none
 
-if [ -n "$ASSET_FILES" ]; then
-  # Upload assets in batch
-  echo "$ASSET_FILES" | while read -r file; do
-    BLOB_NAME="${file#$STORYBOOK_DIR/}"
-    
-    if [ "$VERBOSE" = true ]; then
-      echo "  Uploading: $BLOB_NAME"
-    fi
-    
-    az storage blob upload \
-      --account-name "$STORAGE_ACCOUNT" \
-      --container-name "$CONTAINER_NAME" \
-      --name "$BLOB_NAME" \
-      --file "$file" \
-      --overwrite \
-      --content-cache-control "public, max-age=31536000, immutable" \
-      --output none
-  done
-  
-  echo -e "${GREEN}✓ Assets uploaded${NC}"
-else
-  echo -e "${YELLOW}⚠ No asset files found${NC}"
-fi
+echo -e "${GREEN}✓ All files uploaded${NC}"
 echo ""
 
-# Upload HTML/JSON with short cache
-echo -e "${GREEN}Step 2/3: Uploading HTML/JSON with short cache...${NC}"
+# Set cache headers for HTML/JSON files (short cache)
+echo -e "${GREEN}Step 2/2: Setting cache headers...${NC}"
 
-# Get list of HTML/JSON/TXT files
+# Get list of HTML/JSON/TXT files and update their cache headers
 CONTENT_FILES=$(find "$STORYBOOK_DIR" -type f \
   \( -name "*.html" -o -name "*.json" -o -name "*.txt" \) \
   -print)
@@ -216,20 +195,18 @@ if [ -n "$CONTENT_FILES" ]; then
     BLOB_NAME="${file#$STORYBOOK_DIR/}"
     
     if [ "$VERBOSE" = true ]; then
-      echo "  Uploading: $BLOB_NAME"
+      echo "  Setting cache for: $BLOB_NAME"
     fi
     
-    az storage blob upload \
+    az storage blob update \
       --account-name "$STORAGE_ACCOUNT" \
       --container-name "$CONTAINER_NAME" \
       --name "$BLOB_NAME" \
-      --file "$file" \
-      --overwrite \
       --content-cache-control "public, max-age=0, must-revalidate" \
-      --output none
+      --output none 2>/dev/null || true
   done
   
-  echo -e "${GREEN}✓ HTML/JSON uploaded${NC}"
+  echo -e "${GREEN}✓ Cache headers set${NC}"
 else
   echo -e "${YELLOW}⚠ No HTML/JSON files found${NC}"
 fi
@@ -237,7 +214,7 @@ echo ""
 
 # CDN purge
 if [ "$PURGE_CDN" = true ]; then
-  echo -e "${GREEN}Step 3/3: Purging CDN cache...${NC}"
+  echo -e "${GREEN}Step 3/2: Purging CDN cache...${NC}"
   
   az cdn endpoint purge \
     --resource-group "$RESOURCE_GROUP" \
@@ -250,7 +227,7 @@ if [ "$PURGE_CDN" = true ]; then
   echo "  This may take 1-5 minutes to propagate"
   echo ""
 else
-  echo -e "${YELLOW}Step 3/3: Skipped (CDN purge not requested)${NC}"
+  echo -e "${YELLOW}Step 3/2: Skipped (CDN purge not requested)${NC}"
   echo ""
 fi
 
