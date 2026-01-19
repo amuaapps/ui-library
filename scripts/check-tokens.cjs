@@ -48,6 +48,8 @@ const ALLOWED_EXCEPTIONS = [
   /min-[wh]-\[[\d.]+(?:px|rem|em)\]/g,
   // Max-height for scrollable areas
   /max-h-\[[\d.]+(?:px|rem|em)\]/g,
+  // CSS variables with hsl/rgb/rgba (e.g., hsl(var(--primary)))
+  /(?:hsl|rgb|rgba)\(var\(--[^)]+\)\)/g,
 ];
 
 class TokenChecker {
