@@ -132,26 +132,25 @@ jobs:
           BASE_VERSION=$(node -p "require('./package.json').version")
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           
-          # Generate deterministic candidate version using run number
-          CANDIDATE_VERSION="${BASE_VERSION}-next.${{ github.run_number }}"
-          
           echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
-          echo "candidate_version=$CANDIDATE_VERSION" >> $GITHUB_OUTPUT
-          
           echo "Base version: $BASE_VERSION"
-          echo "Candidate version: $CANDIDATE_VERSION"
           
           # Configure npm to query GitHub Packages
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
           echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
           
-          # Check if this exact version already exists in GitHub Packages
-          if npm view "$PACKAGE_NAME@$CANDIDATE_VERSION" version 2>/dev/null; then
+          # Check if this base version already exists in GitHub Packages
+          if npm view "$PACKAGE_NAME@$BASE_VERSION" version 2>/dev/null; then
             echo "should_publish=false" >> $GITHUB_OUTPUT
-            echo "⚠️  Version $CANDIDATE_VERSION already exists - skipping publish"
+            echo "candidate_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+            echo "⚠️  Version $BASE_VERSION already published - skipping publish"
+            echo "💡 To publish a new version, bump the version in package.json"
           else
+            # Version doesn't exist - generate candidate version for pre-release
+            CANDIDATE_VERSION="${BASE_VERSION}-next.${{ github.run_number }}"
             echo "should_publish=true" >> $GITHUB_OUTPUT
-            echo "✓ Version $CANDIDATE_VERSION does not exist - will publish"
+            echo "candidate_version=$CANDIDATE_VERSION" >> $GITHUB_OUTPUT
+            echo "✓ Version $BASE_VERSION is new - will publish as $CANDIDATE_VERSION"
           fi
       
       - name: Build Library
@@ -443,8 +442,21 @@ jobs:
             --query 'properties.outputs.cdnEndpointName.value' \
             --output tsv 2>/dev/null || echo "")
           
-          # Note: Static website hosting is now configured by Bicep deployment scripts
-          # No manual enablement needed
+          # Enable static website hosting on both storage accounts
+          # Note: This must be done via workflow because Bicep deployment scripts
+          # require the service principal to have role assignment permissions
+          echo "Enabling static website hosting..."
+          az storage blob service-properties update \
+            --account-name "$BLUE_ACCOUNT" \
+            --static-website \
+            --404-document index.html \
+            --index-document index.html
+          
+          az storage blob service-properties update \
+            --account-name "$GREEN_ACCOUNT" \
+            --static-website \
+            --404-document index.html \
+            --index-document index.html
           
           echo "green_account=$GREEN_ACCOUNT" >> $GITHUB_OUTPUT
           echo "green_url=$GREEN_URL" >> $GITHUB_OUTPUT
