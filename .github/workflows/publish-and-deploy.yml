@@ -247,18 +247,23 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@amuaapps'
       
-      - name: Configure npm authentication
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
-          echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
-      
       - name: Install candidate version in smoke-test
         run: |
           cd smoke-test
+          
+          # Configure npm authentication for GitHub Packages
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > .npmrc
+          echo "@amuaapps:registry=https://npm.pkg.github.com" >> .npmrc
+          
+          # Install dependencies first
+          npm install
+          
           # Remove existing library if present
           npm uninstall @amuaapps/ui-library 2>/dev/null || true
+          
           # Install the 'next' tagged version (our candidate)
           npm install @amuaapps/ui-library@next
+          
           INSTALLED_VERSION=$(node -p "require('./node_modules/@amuaapps/ui-library/package.json').version")
           echo "Installed version: $INSTALLED_VERSION"
           
@@ -268,6 +273,8 @@ jobs:
             exit 1
           fi
           echo "✓ Candidate version installed successfully"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Run smoke-test build
         run: |
