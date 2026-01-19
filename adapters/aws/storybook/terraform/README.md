@@ -22,13 +22,62 @@ This directory contains Terraform templates for hosting Storybook on AWS using S
 - Terraform 1.5 or later
 - AWS account with appropriate permissions
 
+## Remote State Backend Setup (Required for CI/CD)
+
+For production use and CI/CD pipelines, Terraform state must be stored remotely to enable:
+- State persistence across workflow runs
+- State locking to prevent concurrent modifications
+- Team collaboration
+
+### Bootstrap Backend Infrastructure
+
+Run the bootstrap script to create the S3 bucket and DynamoDB table:
+
+```bash
+cd adapters/aws/storybook/terraform
+./scripts/bootstrap-backend.sh my-terraform-state-bucket terraform-state-locks us-east-1
+```
+
+This creates:
+- **S3 bucket** for state storage (with versioning and encryption)
+- **DynamoDB table** for state locking
+
+### Configure Backend
+
+Create a `backend.hcl` file (copy from `backend.hcl.example`):
+
+```hcl
+bucket         = "my-terraform-state-bucket"
+key            = "ui-library/storybook/dev/terraform.tfstate"
+region         = "us-east-1"
+dynamodb_table = "terraform-state-locks"
+encrypt        = true
+```
+
+**Important:** Do NOT commit `backend.hcl` to git (it's in `.gitignore`).
+
+### Initialize with Remote Backend
+
+```bash
+terraform init -backend-config=backend.hcl
+```
+
+For CI/CD, backend config is provided via environment variables (see CI/CD section below).
+
 ## Quick Start
 
 ### 1. Initialize Terraform
 
+**Local development (no remote state):**
 ```bash
 cd adapters/aws/storybook/terraform
 terraform init
+```
+
+**With remote state (recommended):**
+```bash
+cd adapters/aws/storybook/terraform
+terraform init -backend-config=backend.hcl
 ```
 
 ### 2. Configure Variables
@@ -222,6 +271,41 @@ aws cloudfront create-invalidation --distribution-id ${DIST_ID} --paths "/*"
 - Route53: ~$0.50/month
 - **Total: ~$5-20/month**
 
+## CI/CD Integration
+
+### Required GitHub Secrets/Variables
+
+For remote state backend:
+- `TF_STATE_BUCKET` - S3 bucket for Terraform state
+- `TF_STATE_DYNAMODB_TABLE` - DynamoDB table for state locking
+- `TF_STATE_REGION` - AWS region for state backend (e.g., `us-east-1`)
+
+For AWS deployment:
+- `AWS_REGION` - Target AWS region
+- AWS credentials via OIDC (recommended) or access keys
+
+### Backend Configuration in CI
+
+The workflow automatically configures the backend using environment variables:
+
+```bash
+terraform init \
+  -backend-config="bucket=${TF_STATE_BUCKET}" \
+  -backend-config="key=ui-library/storybook/${ENVIRONMENT}/terraform.tfstate" \
+  -backend-config="region=${TF_STATE_REGION}" \
+  -backend-config="dynamodb_table=${TF_STATE_DYNAMODB_TABLE}" \
+  -backend-config="encrypt=true"
+```
+
+### State Isolation per Environment
+
+Each environment (dev/staging/prod) uses a separate state file:
+- Dev: `ui-library/storybook/dev/terraform.tfstate`
+- Staging: `ui-library/storybook/staging/terraform.tfstate`
+- Prod: `ui-library/storybook/prod/terraform.tfstate`
+
+This ensures environment isolation and prevents accidental cross-environment changes.
+
 ## Security
 
 ### IAM Permissions
@@ -230,6 +314,7 @@ aws cloudfront create-invalidation --distribution-id ${DIST_ID} --paths "/*"
 - S3: Full access to created buckets
 - CloudFront: Create/update distributions
 - Route53: Update records (if custom domain)
+- **State Backend:** Read/write access to state bucket and DynamoDB table
 
 **CI/CD Upload:**
 - S3: PutObject only to specific buckets

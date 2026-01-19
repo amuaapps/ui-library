@@ -61,3 +61,25 @@ output "active_environment" {
   description = "Currently active environment (blue or green)"
   value       = var.active_environment
 }
+
+# Verification Outputs (for CI/CD green verification)
+
+output "green_bucket_website_endpoint" {
+  description = "Direct S3 website endpoint for GREEN bucket (for verification before CDN switch)"
+  value       = var.enable_blue_green ? aws_s3_bucket_website_configuration.green[0].website_endpoint : null
+}
+
+output "blue_bucket_website_endpoint" {
+  description = "Direct S3 website endpoint for BLUE bucket"
+  value       = aws_s3_bucket_website_configuration.blue[0].website_endpoint
+}
+
+output "green_bucket_name" {
+  description = "GREEN bucket name (for content verification)"
+  value       = var.enable_blue_green ? aws_s3_bucket.green[0].id : null
+}
+
+output "blue_bucket_name" {
+  description = "BLUE bucket name"
+  value       = aws_s3_bucket.blue.id
+}

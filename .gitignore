@@ -38,3 +38,12 @@ lerna-debug.log*
 
 *storybook.log
 storybook-static
+
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/backend.hcl
+**/.terraformrc
+**/terraform.rc

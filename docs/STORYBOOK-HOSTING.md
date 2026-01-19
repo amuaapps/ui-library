@@ -108,6 +108,24 @@ The build produces:
 - **Rollback:** Revert CloudFront origin to BLUE bucket
 - **Propagation:** CloudFront changes take 1-5 minutes
 
+**AWS Green Verification Strategy:**
+
+To ensure meaningful verification of the GREEN deployment before switching traffic:
+
+1. **Upload to GREEN bucket** (without CloudFront invalidation)
+2. **Verify GREEN bucket contents:**
+   - Check required files exist (`index.html`, `iframe.html`)
+   - Validate file count (ensure deployment is complete)
+   - Test S3 website endpoint directly (bypasses CloudFront cache)
+3. **Switch CloudFront origin** to GREEN bucket
+4. **Invalidate CloudFront cache** after switch (ensures users see new content)
+
+**Why this order matters:**
+- Verifying bucket contents directly ensures GREEN is valid before switching
+- CloudFront invalidation after switch prevents cache serving stale BLUE content
+- Direct S3 website endpoint verification bypasses CDN caching issues
+- If verification fails, traffic remains on BLUE (safe rollback)
+
 **Alternative AWS (Two CloudFront Distributions + Route53):**
 - Blue and Green each have separate CloudFront distributions
 - Route53 alias record points to active distribution

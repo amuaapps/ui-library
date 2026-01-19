@@ -517,8 +517,21 @@ jobs:
           }
           EOF
           
-          # Initialize and deploy
-          terraform init
+          # Initialize Terraform with remote backend (if configured)
+          if [ -n "${{ vars.TF_STATE_BUCKET }}" ]; then
+            echo "Configuring remote backend..."
+            terraform init \
+              -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+              -backend-config="key=ui-library/storybook/${{ needs.build.outputs.environment }}/terraform.tfstate" \
+              -backend-config="region=${{ vars.TF_STATE_REGION || 'us-east-1' }}" \
+              -backend-config="dynamodb_table=${{ vars.TF_STATE_DYNAMODB_TABLE || 'terraform-state-locks' }}" \
+              -backend-config="encrypt=true"
+          else
+            echo "Using local backend (no TF_STATE_BUCKET configured)"
+            terraform init
+          fi
+          
+          # Deploy infrastructure
           terraform apply -auto-approve
           
           # Get outputs
@@ -530,21 +543,17 @@ jobs:
           echo "green_url=$GREEN_URL" >> $GITHUB_OUTPUT
           echo "distribution_id=$DIST_ID" >> $GITHUB_OUTPUT
           
-          # Upload to GREEN
+          # Upload to GREEN (without invalidation - that happens after switch)
           cd ../../../../
           chmod +x adapters/shared/storybook/upload-aws.sh
+          ./adapters/shared/storybook/upload-aws.sh -b "$GREEN_BUCKET"
           
-          if [ -n "$DIST_ID" ]; then
-            ./adapters/shared/storybook/upload-aws.sh \
-              -b "$GREEN_BUCKET" \
-              --invalidate \
-              --distribution-id "$DIST_ID"
-          else
-            ./adapters/shared/storybook/upload-aws.sh \
-              -b "$GREEN_BUCKET"
-          fi
+          # Verify GREEN deployment
+          cd adapters/aws/storybook/terraform
+          chmod +x scripts/verify-green.sh
+          ./scripts/verify-green.sh "$GREEN_BUCKET"
           
-          echo "✓ Deployed to AWS GREEN environment"
+          echo "✓ Deployed and verified AWS GREEN environment"
           echo "URL: $GREEN_URL"
 
   # Step 6: Verify & Switch Blue-Green
@@ -630,9 +639,33 @@ jobs:
           sudo apt update && sudo apt install terraform
           
           cd adapters/aws/storybook/terraform
-          terraform init
+          
+          # Initialize Terraform with same remote backend as deploy
+          if [ -n "${{ vars.TF_STATE_BUCKET }}" ]; then
+            echo "Configuring remote backend..."
+            terraform init \
+              -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+              -backend-config="key=ui-library/storybook/${{ needs.build.outputs.environment }}/terraform.tfstate" \
+              -backend-config="region=${{ vars.TF_STATE_REGION || 'us-east-1' }}" \
+              -backend-config="dynamodb_table=${{ vars.TF_STATE_DYNAMODB_TABLE || 'terraform-state-locks' }}" \
+              -backend-config="encrypt=true"
+          else
+            echo "Using local backend (no TF_STATE_BUCKET configured)"
+            terraform init
+          fi
+          
           chmod +x switch.sh
           ./switch.sh green --auto-approve
+          
+          # Invalidate CloudFront cache after switch (if CDN enabled)
+          DIST_ID=$(terraform output -raw cdn_distribution_id 2>/dev/null || echo "")
+          if [ -n "$DIST_ID" ]; then
+            echo "Invalidating CloudFront cache..."
+            aws cloudfront create-invalidation \
+              --distribution-id "$DIST_ID" \
+              --paths "/*"
+            echo "✓ CloudFront cache invalidated"
+          fi
       
       - name: Deployment Summary
         run: |
