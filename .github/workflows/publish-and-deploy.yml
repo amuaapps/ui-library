@@ -135,29 +135,20 @@ jobs:
           echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
           echo "Base version: $BASE_VERSION"
           
-          # Configure npm to query GitHub Packages
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
-          echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
-          
-          # Check if ANY version matching this base already exists (including -next variants)
-          # Get all published versions and clean up JSON formatting
-          PUBLISHED_VERSIONS=$(npm view "$PACKAGE_NAME" versions 2>/dev/null | tr -d "[]'\"," | tr ' ' '\n' || echo "")
-          
-          echo "Published versions:"
-          echo "$PUBLISHED_VERSIONS"
-          
-          # Check if any published version starts with our base version
-          if echo "$PUBLISHED_VERSIONS" | grep -q "^${BASE_VERSION}"; then
-            echo "should_publish=false" >> $GITHUB_OUTPUT
-            echo "candidate_version=$BASE_VERSION" >> $GITHUB_OUTPUT
-            echo "⚠️  Version $BASE_VERSION (or variant) already published - skipping publish"
-            echo "💡 To publish a new version, bump the version in package.json"
-          else
-            # Version doesn't exist - generate candidate version for pre-release
+          # Check if package.json version changed in this push
+          # Compare with the previous commit (HEAD~1)
+          if git diff HEAD~1 HEAD -- package.json | grep -q '"version"'; then
+            # Version changed - should publish
             CANDIDATE_VERSION="${BASE_VERSION}-next.${{ github.run_number }}"
             echo "should_publish=true" >> $GITHUB_OUTPUT
             echo "candidate_version=$CANDIDATE_VERSION" >> $GITHUB_OUTPUT
-            echo "✓ Version $BASE_VERSION is new - will publish as $CANDIDATE_VERSION"
+            echo "✓ Version changed to $BASE_VERSION - will publish as $CANDIDATE_VERSION"
+          else
+            # Version unchanged - skip publish
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            echo "candidate_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+            echo "⚠️  Version $BASE_VERSION unchanged - skipping publish"
+            echo "💡 To publish a new version, bump the version in package.json"
           fi
       
       - name: Build Library
