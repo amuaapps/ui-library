@@ -404,9 +404,132 @@ Requirements for feature flags:
 
 ---
 
-### 9.3 Workflow Process & Pipeline Expectations
+### 9.3 Package Versioning (npm/published packages)
 
-#### 9.3.1 Stage 1 — Test (required checks)
+For repositories that publish packages (npm libraries, shared components, etc.), version management is critical for consumer stability.
+
+#### 9.3.1 Semantic Versioning (required)
+
+**MUST** follow [Semantic Versioning 2.0.0](https://semver.org/):
+
+- **MAJOR** (`X.0.0`): Breaking changes that require consumer code updates
+  - Examples: Removing exports, changing function signatures, renaming props, removing components
+- **MINOR** (`0.X.0`): New features that are backward-compatible
+  - Examples: Adding new components, adding optional props, adding new exports
+- **PATCH** (`0.0.X`): Bug fixes and internal improvements that don't change the API
+  - Examples: Fixing component behavior, performance improvements, dependency updates
+
+#### 9.3.2 Version Bump Process (human-driven)
+
+**AI tools MUST NOT autonomously bump package versions.**
+
+Version bumps require human decision because:
+- Humans understand the impact on consumers
+- Version numbers communicate intent and breaking changes
+- Incorrect versions can break consumer CI/CD pipelines
+
+**Process:**
+1. **Human decides** when to bump and which part (major/minor/patch)
+2. **Human updates** `package.json` version field
+3. **Human commits** the version bump with a clear commit message
+4. **CI/CD automatically** publishes the new version
+
+**AI tools:**
+- **NEVER** modify the `version` field in `package.json` without explicit user instruction
+- **ALWAYS** ask the user which version to bump to (e.g., "Should I bump to 1.1.0 or 2.0.0?")
+- **MAY** suggest a version based on changes (e.g., "These changes add new exports, suggesting minor bump to 1.1.0")
+
+#### 9.3.3 Pre-release Versions (CI-generated)
+
+For testing and validation before promoting to `latest`:
+
+**Format:** `{base}-{tag}.{number}`
+- Examples: `1.0.0-next.42`, `2.1.0-beta.3`, `1.5.0-rc.1`
+
+**Tags:**
+- `next`: Automated CI builds from develop/main (not manually created)
+- `beta`: Feature testing releases
+- `rc`: Release candidates
+- `alpha`: Early experimental releases
+
+**Rules:**
+- Pre-release versions are **automatically generated** by CI using deterministic schemes (e.g., `{base}-next.{runNumber}`)
+- Pre-release versions are **never** tagged as `latest` on npm
+- Pre-release versions are **promoted** to `latest` only after passing smoke tests and validation
+
+**AI tools:**
+- Do NOT manually create pre-release versions
+- CI workflows handle pre-release versioning automatically
+
+#### 9.3.4 Version Bump Examples
+
+**Scenario 1: Bug fix in existing component**
+```
+Current: 1.2.3
+Change: Fix Button hover state
+Bump to: 1.2.4 (PATCH)
+```
+
+**Scenario 2: New component added**
+```
+Current: 1.2.4
+Change: Add new Tooltip component
+Bump to: 1.3.0 (MINOR)
+```
+
+**Scenario 3: Breaking change**
+```
+Current: 1.3.0
+Change: Remove deprecated Card.Header export
+Bump to: 2.0.0 (MAJOR)
+```
+
+**Scenario 4: Multiple changes**
+```
+Current: 1.3.0
+Changes:
+  - Add new Badge component (MINOR)
+  - Fix Input validation bug (PATCH)
+  - Remove deprecated Alert.Icon (MAJOR)
+Bump to: 2.0.0 (MAJOR - highest precedence)
+```
+
+#### 9.3.5 Changelog & Release Notes (recommended)
+
+When bumping versions:
+- **SHOULD** maintain a `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/)
+- **SHOULD** include release notes describing changes for consumers
+- **MUST** document breaking changes clearly
+
+**AI tools:**
+- MAY generate changelog entries when asked
+- MUST clearly mark breaking changes in changelog
+- SHOULD group changes by type (Added, Changed, Deprecated, Removed, Fixed, Security)
+
+#### 9.3.6 Deprecation Strategy (required for libraries)
+
+Before removing features (MAJOR bump):
+1. **MINOR release:** Mark as deprecated, add console warnings, update docs
+2. **Wait period:** At least one minor version or reasonable time for consumers to migrate
+3. **MAJOR release:** Remove deprecated feature
+
+**Example:**
+```
+v1.5.0: Add deprecation warning to OldButton, recommend using Button
+v1.6.0: (other features)
+v2.0.0: Remove OldButton completely
+```
+
+**AI tools:**
+- When removing features, MUST suggest deprecation path first
+- MUST update documentation to mark deprecated features
+- MAY add runtime warnings for deprecated usage
+
+---
+
+### 9.4 Workflow Process & Pipeline Expectations
+
+#### 9.4.1 Stage 1 — Test (required checks)
 
 Stage 1 MUST run on every PR and on protected branches (at minimum `develop`, `release`, `main`) and MUST fail the pipeline if any check fails.
 
