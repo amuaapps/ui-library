@@ -140,10 +140,14 @@ jobs:
           echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
           
           # Check if ANY version matching this base already exists (including -next variants)
-          # Get all published versions and check if any start with our base version
-          PUBLISHED_VERSIONS=$(npm view "$PACKAGE_NAME" versions --json 2>/dev/null || echo "[]")
+          # Get all published versions and clean up JSON formatting
+          PUBLISHED_VERSIONS=$(npm view "$PACKAGE_NAME" versions 2>/dev/null | tr -d "[]'\"," | tr ' ' '\n' || echo "")
           
-          if echo "$PUBLISHED_VERSIONS" | jq -e --arg base "$BASE_VERSION" 'if type == "array" then any(startswith($base)) else . == $base end' > /dev/null 2>&1; then
+          echo "Published versions:"
+          echo "$PUBLISHED_VERSIONS"
+          
+          # Check if any published version starts with our base version
+          if echo "$PUBLISHED_VERSIONS" | grep -q "^${BASE_VERSION}"; then
             echo "should_publish=false" >> $GITHUB_OUTPUT
             echo "candidate_version=$BASE_VERSION" >> $GITHUB_OUTPUT
             echo "⚠️  Version $BASE_VERSION (or variant) already published - skipping publish"
