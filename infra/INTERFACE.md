@@ -654,7 +654,7 @@ tags = {
 - name: Deploy Infrastructure
   id: infra
   run: |
-    cd adapters/aws/storybook/terraform
+    cd infra/aws/storybook/terraform
     terraform apply -auto-approve
     echo "active_url=$(terraform output -raw storybook_url_active)" >> $GITHUB_OUTPUT
     echo "green_target=$(terraform output -raw upload_target_green)" >> $GITHUB_OUTPUT
@@ -670,7 +670,7 @@ tags = {
 
 - name: Switch to GREEN
   run: |
-    cd adapters/aws/storybook/terraform
+    cd infra/aws/storybook/terraform
     terraform apply -var="active_environment=green" -auto-approve
 
 - name: Verify ACTIVE

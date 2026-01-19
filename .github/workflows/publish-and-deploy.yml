@@ -326,15 +326,17 @@ jobs:
       - name: Detect Cloud Provider
         id: detect-provider
         run: |
-          if [ -n "${{ vars.AZURE_SUBSCRIPTION_ID }}" ] && [ -n "${{ vars.AZURE_TENANT_ID }}" ]; then
+          # Check for Azure-specific files
+          if [ -d "infra/azure" ] && [ -f "infra/azure/storybook/bicep/main.bicep" ]; then
             echo "provider=azure" >> $GITHUB_OUTPUT
-            echo "✓ Detected Azure configuration"
-          elif [ -n "${{ vars.AWS_REGION }}" ] && [ -n "${{ vars.AWS_ROLE_ARN }}" ]; then
+            echo "Detected Azure provider"
+          # Check for AWS-specific files
+          elif [ -d "infra/aws" ] && [ -f "infra/aws/storybook/terraform/main.tf" ]; then
             echo "provider=aws" >> $GITHUB_OUTPUT
-            echo "✓ Detected AWS configuration"
+            echo "Detected AWS provider"
           else
-            echo "❌ No cloud provider configured"
-            echo "Configure Azure or AWS environment variables in GitHub"
+            echo "❌ Error: No cloud provider detected"
+            echo "Expected either infra/azure/storybook/bicep or infra/aws/storybook/terraform"
             exit 1
           fi
       
@@ -377,7 +379,7 @@ jobs:
           fi
           
           # Generate parameters
-          cd adapters/azure/storybook/bicep
+          cd infra/azure/storybook/bicep
           cat > parameters.generated.json <<EOF
           {
             "\$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
@@ -441,19 +443,8 @@ jobs:
             --query 'properties.outputs.cdnEndpointName.value' \
             --output tsv 2>/dev/null || echo "")
           
-          # Enable static website hosting on both storage accounts
-          echo "Enabling static website hosting..."
-          az storage blob service-properties update \
-            --account-name "$BLUE_ACCOUNT" \
-            --static-website \
-            --404-document index.html \
-            --index-document index.html
-          
-          az storage blob service-properties update \
-            --account-name "$GREEN_ACCOUNT" \
-            --static-website \
-            --404-document index.html \
-            --index-document index.html
+          # Note: Static website hosting is now configured by Bicep deployment scripts
+          # No manual enablement needed
           
           echo "green_account=$GREEN_ACCOUNT" >> $GITHUB_OUTPUT
           echo "green_url=$GREEN_URL" >> $GITHUB_OUTPUT
@@ -463,17 +454,17 @@ jobs:
           
           # Upload to GREEN
           cd ../../../../
-          chmod +x adapters/shared/storybook/upload-azure.sh
+          chmod +x infra/shared/storybook/upload-azure.sh
           
           if [ -n "$CDN_PROFILE" ] && [ -n "$CDN_ENDPOINT" ]; then
-            ./adapters/shared/storybook/upload-azure.sh \
+            ./infra/shared/storybook/upload-azure.sh \
               -a "$GREEN_ACCOUNT" \
               -g "$RG" \
               --purge-cdn \
               --cdn-profile "$CDN_PROFILE" \
               --cdn-endpoint "$CDN_ENDPOINT"
           else
-            ./adapters/shared/storybook/upload-azure.sh \
+            ./infra/shared/storybook/upload-azure.sh \
               -a "$GREEN_ACCOUNT" \
               -g "$RG"
           fi
@@ -498,7 +489,7 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
           sudo apt update && sudo apt install terraform
           
-          cd adapters/aws/storybook/terraform
+          cd infra/aws/storybook/terraform
           
           # Generate tfvars
           cat > terraform.auto.tfvars <<EOF
@@ -545,11 +536,11 @@ jobs:
           
           # Upload to GREEN (without invalidation - that happens after switch)
           cd ../../../../
-          chmod +x adapters/shared/storybook/upload-aws.sh
-          ./adapters/shared/storybook/upload-aws.sh -b "$GREEN_BUCKET"
+          chmod +x infra/shared/storybook/upload-aws.sh
+          ./infra/shared/storybook/upload-aws.sh -b "$GREEN_BUCKET"
           
           # Verify GREEN deployment
-          cd adapters/aws/storybook/terraform
+          cd infra/aws/storybook/terraform
           chmod +x scripts/verify-green.sh
           ./scripts/verify-green.sh "$GREEN_BUCKET"
           
@@ -574,8 +565,8 @@ jobs:
       
       - name: Verify GREEN Deployment
         run: |
-          chmod +x adapters/shared/storybook/verify.sh
-          ./adapters/shared/storybook/verify.sh \
+          chmod +x infra/shared/storybook/verify.sh
+          ./infra/shared/storybook/verify.sh \
             -u "${{ needs.deploy.outputs.green_url }}" \
             --verbose
       
@@ -591,7 +582,7 @@ jobs:
       - name: Switch to GREEN (Azure)
         if: needs.deploy.outputs.provider == 'azure'
         run: |
-          cd adapters/azure/storybook/bicep
+          cd infra/azure/storybook/bicep
           
           # Create parameters.json for the switch script
           cat > parameters.json <<EOF
@@ -638,7 +629,7 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
           sudo apt update && sudo apt install terraform
           
-          cd adapters/aws/storybook/terraform
+          cd infra/aws/storybook/terraform
           
           # Initialize Terraform with same remote backend as deploy
           if [ -n "${{ vars.TF_STATE_BUCKET }}" ]; then

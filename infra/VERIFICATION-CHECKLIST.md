@@ -14,10 +14,10 @@ This checklist ensures all infrastructure components are properly configured and
 
 ### 1. Repository Structure ✅
 
-- [ ] `adapters/` folder exists
-- [ ] `adapters/aws/storybook/terraform/` exists
-- [ ] `adapters/azure/storybook/bicep/` exists
-- [ ] `adapters/shared/storybook/` exists
+- [ ] `infra/` folder exists
+- [ ] `infra/aws/storybook/terraform/` exists
+- [ ] `infra/azure/storybook/bicep/` exists
+- [ ] `infra/shared/storybook/` exists
 - [ ] All documentation files present
 - [ ] All scripts are executable
 
@@ -44,7 +44,7 @@ find adapters -type f -name "*.sh" -exec test -x {} \; -print
 
 #### Syntax Validation
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 terraform fmt -check -recursive
 terraform init -backend=false
 terraform validate
@@ -54,7 +54,7 @@ terraform validate
 
 #### Linting (Optional)
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 ./lint.sh
 ```
 
@@ -76,7 +76,7 @@ cd adapters/aws/storybook/terraform
 
 #### Syntax Validation
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 az bicep build --file main.bicep
 az bicep lint --file main.bicep
 ```
@@ -85,7 +85,7 @@ az bicep lint --file main.bicep
 
 #### Linting (Optional)
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 ./lint.sh
 ```
 
@@ -106,7 +106,7 @@ cd adapters/azure/storybook/bicep
 
 #### Script Validation
 ```bash
-cd adapters/shared/storybook
+cd infra/shared/storybook
 for script in *.sh; do
   bash -n "$script" && echo "✓ $script syntax OK"
 done
@@ -128,16 +128,16 @@ done
 ### 5. Documentation ✅
 
 #### Core Documentation
-- [ ] `adapters/README.md` - Main adapters guide
-- [ ] `adapters/INTERFACE.md` - Interface specification
-- [ ] `adapters/LINTING.md` - Linting guide
-- [ ] `adapters/OSS-COMPLIANCE.md` - OSS compliance
-- [ ] `adapters/VERIFICATION-CHECKLIST.md` - This file
+- [ ] `infra/README.md` - Main adapters guide
+- [ ] `infra/INTERFACE.md` - Interface specification
+- [ ] `infra/LINTING.md` - Linting guide
+- [ ] `infra/OSS-COMPLIANCE.md` - OSS compliance
+- [ ] `infra/VERIFICATION-CHECKLIST.md` - This file
 - [ ] `docs/STORYBOOK-HOSTING.md` - Design decisions
 
 #### Cloud-Specific Documentation
-- [ ] `adapters/aws/storybook/terraform/README.md`
-- [ ] `adapters/azure/storybook/bicep/README.md`
+- [ ] `infra/aws/storybook/terraform/README.md`
+- [ ] `infra/azure/storybook/bicep/README.md`
 
 #### Verification
 ```bash
@@ -190,8 +190,8 @@ find adapters -name "*.tf" -o -name "*.bicep" | \
 **Expected:** No hardcoded organization values
 
 #### .gitignore Configured
-- [ ] `adapters/aws/storybook/terraform/.gitignore` exists
-- [ ] `adapters/azure/storybook/bicep/.gitignore` exists
+- [ ] `infra/aws/storybook/terraform/.gitignore` exists
+- [ ] `infra/azure/storybook/bicep/.gitignore` exists
 - [ ] Excludes `*.tfvars` (except examples)
 - [ ] Excludes `parameters.json` (except examples)
 - [ ] Excludes `.terraform/`
@@ -226,7 +226,7 @@ cat .github/workflows/infra-lint.yml | grep -E "terraform-lint|bicep-lint"
 
 #### Step 1: Initialize
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 cp terraform.tfvars.example terraform.tfvars
 # Edit terraform.tfvars with your values
 terraform init
@@ -284,7 +284,7 @@ terraform destroy
 
 #### Step 1: Configure
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 cp parameters.example.json parameters.json
 # Edit parameters.json with your values
 ```
@@ -353,7 +353,7 @@ npm run build-storybook
 
 #### Test AWS Upload (Dry Run)
 ```bash
-./adapters/shared/storybook/upload-aws.sh \
+./infra/shared/storybook/upload-aws.sh \
   -b test-bucket \
   --dry-run
 ```
@@ -362,7 +362,7 @@ npm run build-storybook
 
 #### Test Azure Upload (Dry Run)
 ```bash
-./adapters/shared/storybook/upload-azure.sh \
+./infra/shared/storybook/upload-azure.sh \
   -a teststorage \
   --dry-run
 ```
@@ -375,7 +375,7 @@ npm run build-storybook
 
 #### Test Against Public URL
 ```bash
-./adapters/shared/storybook/verify.sh \
+./infra/shared/storybook/verify.sh \
   -u https://storybook.js.org
 ```
 
@@ -383,7 +383,7 @@ npm run build-storybook
 
 #### Test Verbose Mode
 ```bash
-./adapters/shared/storybook/verify.sh \
+./infra/shared/storybook/verify.sh \
   -u https://storybook.js.org \
   --verbose
 ```
@@ -396,7 +396,7 @@ npm run build-storybook
 
 #### AWS Switch (Dry Run)
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 ./switch.sh green
 # Cancel when prompted
 ```
@@ -405,7 +405,7 @@ cd adapters/aws/storybook/terraform
 
 #### Azure Switch (Dry Run)
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 ./switch.sh green -g rg-ui-library-dev
 # Cancel when prompted
 ```
@@ -424,26 +424,26 @@ cd adapters/azure/storybook/bicep
 npm run build-storybook
 
 # 2. Deploy infrastructure (if not already deployed)
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 terraform apply
 
 # 3. Upload to GREEN
 cd ../../../../
-GREEN_BUCKET=$(cd adapters/aws/storybook/terraform && terraform output -raw upload_target_green)
-./adapters/shared/storybook/upload-aws.sh -b $GREEN_BUCKET
+GREEN_BUCKET=$(cd infra/aws/storybook/terraform && terraform output -raw upload_target_green)
+./infra/shared/storybook/upload-aws.sh -b $GREEN_BUCKET
 
 # 4. Verify GREEN
-GREEN_URL=$(cd adapters/aws/storybook/terraform && terraform output -raw storybook_url_green)
-./adapters/shared/storybook/verify.sh -u $GREEN_URL
+GREEN_URL=$(cd infra/aws/storybook/terraform && terraform output -raw storybook_url_green)
+./infra/shared/storybook/verify.sh -u $GREEN_URL
 
 # 5. Switch to GREEN
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 ./switch.sh green --auto-approve
 
 # 6. Verify ACTIVE
 ACTIVE_URL=$(terraform output -raw storybook_url_active)
 cd ../../../../
-./adapters/shared/storybook/verify.sh -u $ACTIVE_URL
+./infra/shared/storybook/verify.sh -u $ACTIVE_URL
 ```
 
 **Expected:** All steps succeed
@@ -454,7 +454,7 @@ cd ../../../../
 
 #### Test Rollback to BLUE
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 ./switch.sh blue --auto-approve
 ```
 

@@ -34,7 +34,7 @@ For production use and CI/CD pipelines, Terraform state must be stored remotely 
 Run the bootstrap script to create the S3 bucket and DynamoDB table:
 
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 ./scripts/bootstrap-backend.sh my-terraform-state-bucket terraform-state-locks us-east-1
 ```
 
@@ -70,13 +70,13 @@ For CI/CD, backend config is provided via environment variables (see CI/CD secti
 
 **Local development (no remote state):**
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 terraform init
 ```
 
 **With remote state (recommended):**
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 terraform init -backend-config=backend.hcl
 ```
 

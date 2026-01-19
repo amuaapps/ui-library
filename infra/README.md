@@ -1,12 +1,12 @@
-# Infrastructure Adapters
+# Infrastructure Templates
 
 This directory contains cloud-specific infrastructure templates for deploying the UI library's supporting services.
 
 ## Overview
 
-**Adapters** are cloud-specific infrastructure implementations that follow the multi-cloud strategy defined in `docs/agents.md`. Each adapter provides the same logical functionality using cloud-native tools and services.
+This directory contains multi-cloud infrastructure implementations that follow the strategy defined in `docs/agents.md`. Each cloud provider implementation provides the same logical functionality using cloud-native tools and services.
 
-**Current Adapters:**
+**Available Providers:**
 - **AWS** - Terraform templates for Amazon Web Services
 - **Azure** - Bicep templates for Microsoft Azure
 - **Shared** - Common documentation and deployment scripts
@@ -14,7 +14,7 @@ This directory contains cloud-specific infrastructure templates for deploying th
 ## Directory Structure
 
 ```
-adapters/
+infra/
 ├── README.md                          # This file
 ├── aws/                               # AWS infrastructure
 │   └── storybook/                     # Storybook hosting
@@ -36,9 +36,9 @@ adapters/
         └── switch.md                  # Blue/Green switch guide
 ```
 
-## What Are Adapters?
+## Multi-Cloud Infrastructure
 
-Adapters implement the **Adapter Pattern** for infrastructure:
+This infrastructure follows a **multi-cloud strategy** with consistent interfaces:
 
 **Problem:** Different cloud providers have different services, APIs, and tools.
 
@@ -66,7 +66,7 @@ Adapters implement the **Adapter Pattern** for infrastructure:
 
 2. **Navigate to AWS templates:**
    ```bash
-   cd adapters/aws/storybook/terraform
+   cd infra/aws/storybook/terraform
    ```
 
 3. **Initialize Terraform:**
@@ -95,7 +95,7 @@ Adapters implement the **Adapter Pattern** for infrastructure:
    terraform output
    ```
 
-See `adapters/aws/storybook/terraform/README.md` for detailed instructions.
+See `infra/aws/storybook/terraform/README.md` for detailed instructions.
 
 ### Azure Deployment
 
@@ -106,7 +106,7 @@ See `adapters/aws/storybook/terraform/README.md` for detailed instructions.
 
 2. **Navigate to Azure templates:**
    ```bash
-   cd adapters/azure/storybook/bicep
+   cd infra/azure/storybook/bicep
    ```
 
 3. **Configure parameters:**
@@ -135,7 +135,7 @@ See `adapters/aws/storybook/terraform/README.md` for detailed instructions.
      --query properties.outputs
    ```
 
-See `adapters/azure/storybook/bicep/README.md` for detailed instructions.
+See `infra/azure/storybook/bicep/README.md` for detailed instructions.
 
 ## Deployment Workflow
 
@@ -155,14 +155,14 @@ See `adapters/azure/storybook/bicep/README.md` for detailed instructions.
 4. **Switch to GREEN:** Update active endpoint
 5. **Verify ACTIVE:** Confirm switch successful
 
-See `adapters/shared/storybook/deploy.md` for detailed workflow.
+See `infra/shared/storybook/deploy.md` for detailed workflow.
 
 ## Tearing Down Infrastructure
 
 ### AWS
 
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 terraform destroy
 ```
 
@@ -288,7 +288,7 @@ Blue/Green deployment maintains two identical environments:
 - Update CDN origin to GREEN storage account
 - Propagation: 1-5 minutes
 
-See `adapters/shared/storybook/switch.md` for detailed commands.
+See `infra/shared/storybook/switch.md` for detailed commands.
 
 ## Security Best Practices
 
@@ -376,7 +376,7 @@ See `adapters/shared/storybook/switch.md` for detailed commands.
 ### Getting Help
 
 1. **Check adapter-specific README** - AWS or Azure specific docs
-2. **Review deployment guide** - `adapters/shared/storybook/deploy.md`
+2. **Review deployment guide** - `infra/shared/storybook/deploy.md`
 3. **Check main documentation** - `docs/STORYBOOK-HOSTING.md`
 4. **Open an issue** - GitHub Issues with reproduction steps
 
@@ -386,7 +386,7 @@ See `adapters/shared/storybook/switch.md` for detailed commands.
 
 1. **Create directory structure:**
    ```
-   adapters/{cloud-provider}/storybook/{iac-tool}/
+   infra/{cloud-provider}/storybook/{iac-tool}/
    ```
 
 2. **Implement required resources:**

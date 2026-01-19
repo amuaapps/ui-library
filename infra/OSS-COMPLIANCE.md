@@ -23,9 +23,9 @@ This document verifies that all infrastructure templates and scripts are OSS-fri
 - ✅ `.gitignore` excludes sensitive files
 
 **Files Checked:**
-- `adapters/aws/storybook/terraform/*.tf`
-- `adapters/azure/storybook/bicep/*.bicep`
-- `adapters/shared/storybook/*.sh`
+- `infra/aws/storybook/terraform/*.tf`
+- `infra/azure/storybook/bicep/*.bicep`
+- `infra/shared/storybook/*.sh`
 
 ### 2. No Organization-Specific Values ✅
 

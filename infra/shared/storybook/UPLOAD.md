@@ -30,16 +30,16 @@ Two helper scripts are provided for simplified uploads:
 
 ### AWS Upload Script
 
-**Location:** `adapters/shared/storybook/upload-aws.sh`
+**Location:** `infra/shared/storybook/upload-aws.sh`
 
 **Basic Usage:**
 ```bash
-./adapters/shared/storybook/upload-aws.sh -b <bucket-name>
+./infra/shared/storybook/upload-aws.sh -b <bucket-name>
 ```
 
 **With CloudFront Invalidation:**
 ```bash
-./adapters/shared/storybook/upload-aws.sh \
+./infra/shared/storybook/upload-aws.sh \
   -b storybook-green-ui-library-prod \
   --invalidate \
   --distribution-id E1234567890ABC
@@ -47,7 +47,7 @@ Two helper scripts are provided for simplified uploads:
 
 **Dry Run (Preview):**
 ```bash
-./adapters/shared/storybook/upload-aws.sh \
+./infra/shared/storybook/upload-aws.sh \
   -b storybook-green-ui-library-prod \
   --dry-run
 ```
@@ -63,16 +63,16 @@ Two helper scripts are provided for simplified uploads:
 
 ### Azure Upload Script
 
-**Location:** `adapters/shared/storybook/upload-azure.sh`
+**Location:** `infra/shared/storybook/upload-azure.sh`
 
 **Basic Usage:**
 ```bash
-./adapters/shared/storybook/upload-azure.sh -a <storage-account>
+./infra/shared/storybook/upload-azure.sh -a <storage-account>
 ```
 
 **With CDN Purge:**
 ```bash
-./adapters/shared/storybook/upload-azure.sh \
+./infra/shared/storybook/upload-azure.sh \
   -a sbuilibrarygreen \
   --purge-cdn \
   --cdn-profile cdn-ui-library-prod \
@@ -82,7 +82,7 @@ Two helper scripts are provided for simplified uploads:
 
 **Dry Run (Preview):**
 ```bash
-./adapters/shared/storybook/upload-azure.sh \
+./infra/shared/storybook/upload-azure.sh \
   -a sbuilibrarygreen \
   --dry-run
 ```
@@ -212,7 +212,7 @@ Cache-Control: public, max-age=0, must-revalidate
 ### From Terraform (AWS)
 
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 
 # Get GREEN bucket name
 GREEN_BUCKET=$(terraform output -raw upload_target_green)
@@ -226,7 +226,7 @@ echo "Distribution ID: $DIST_ID"
 ### From Bicep (Azure)
 
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 
 # Get GREEN storage account
 GREEN_ACCOUNT=$(az deployment group show \
@@ -254,14 +254,14 @@ echo "CDN Endpoint: $CDN_ENDPOINT"
 npm run build-storybook
 
 # 2. Get infrastructure outputs
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 GREEN_BUCKET=$(terraform output -raw upload_target_green)
 GREEN_URL=$(terraform output -raw storybook_url_green)
 DIST_ID=$(terraform output -raw cdn_distribution_id)
 cd ../../../../
 
 # 3. Upload to GREEN
-./adapters/shared/storybook/upload-aws.sh \
+./infra/shared/storybook/upload-aws.sh \
   -b $GREEN_BUCKET \
   --invalidate \
   --distribution-id $DIST_ID
@@ -271,7 +271,7 @@ curl -I $GREEN_URL/index.html
 curl -s $GREEN_URL/index.html | grep -q "Storybook" && echo "✓ Storybook detected"
 
 # 5. Switch to GREEN
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 terraform apply -var="active_environment=green" -auto-approve
 
 # 6. Verify ACTIVE
@@ -286,7 +286,7 @@ curl -I $ACTIVE_URL/index.html
 npm run build-storybook
 
 # 2. Get infrastructure outputs
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 RG="rg-ui-library-prod"
 GREEN_ACCOUNT=$(az deployment group show \
   --resource-group $RG \
@@ -311,7 +311,7 @@ CDN_ENDPOINT=$(az deployment group show \
 cd ../../../../
 
 # 3. Upload to GREEN
-./adapters/shared/storybook/upload-azure.sh \
+./infra/shared/storybook/upload-azure.sh \
   -a $GREEN_ACCOUNT \
   --purge-cdn \
   --cdn-profile $CDN_PROFILE \
@@ -323,7 +323,7 @@ curl -I $GREEN_URL/index.html
 curl -s $GREEN_URL/index.html | grep -q "Storybook" && echo "✓ Storybook detected"
 
 # 5. Switch to GREEN
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 az deployment group create \
   --resource-group $RG \
   --template-file main.bicep \
@@ -350,14 +350,14 @@ curl -I $ACTIVE_URL/index.html
 - name: Get Infrastructure Outputs
   id: infra
   run: |
-    cd adapters/aws/storybook/terraform
+    cd infra/aws/storybook/terraform
     echo "green_bucket=$(terraform output -raw upload_target_green)" >> $GITHUB_OUTPUT
     echo "green_url=$(terraform output -raw storybook_url_green)" >> $GITHUB_OUTPUT
     echo "dist_id=$(terraform output -raw cdn_distribution_id)" >> $GITHUB_OUTPUT
 
 - name: Upload to GREEN
   run: |
-    ./adapters/shared/storybook/upload-aws.sh \
+    ./infra/shared/storybook/upload-aws.sh \
       -b ${{ steps.infra.outputs.green_bucket }} \
       --invalidate \
       --distribution-id ${{ steps.infra.outputs.dist_id }}
@@ -369,7 +369,7 @@ curl -I $ACTIVE_URL/index.html
 
 - name: Switch to GREEN
   run: |
-    cd adapters/aws/storybook/terraform
+    cd infra/aws/storybook/terraform
     terraform apply -var="active_environment=green" -auto-approve
 ```
 
@@ -395,7 +395,7 @@ curl -I $ACTIVE_URL/index.html
 
 - name: Upload to GREEN
   run: |
-    ./adapters/shared/storybook/upload-azure.sh \
+    ./infra/shared/storybook/upload-azure.sh \
       -a ${{ steps.infra.outputs.green_account }} \
       --purge-cdn \
       --cdn-profile ${{ steps.infra.outputs.cdn_profile }} \
@@ -409,7 +409,7 @@ curl -I $ACTIVE_URL/index.html
 
 - name: Switch to GREEN
   run: |
-    cd adapters/azure/storybook/bicep
+    cd infra/azure/storybook/bicep
     az deployment group create \
       --resource-group rg-ui-library-prod \
       --template-file main.bicep \

@@ -53,6 +53,13 @@ var commonTags = union({
   Component: 'Storybook'
 }, tags)
 
+// Managed Identity for deployment scripts
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: 'id-${projectName}-${environment}-deploy'
+  location: location
+  tags: commonTags
+}
+
 // Storage Account for BLUE environment
 resource blueStorageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: blueStorageAccountName
@@ -82,6 +89,17 @@ resource blueStorageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   }
 }
 
+// Role assignment for managed identity to configure BLUE storage account
+resource blueStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(blueStorageAccount.id, managedIdentity.id, 'StorageAccountContributor')
+  scope: blueStorageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '17d1049b-9a84-46fb-8f53-869881c3d3ab') // Storage Account Contributor
+    principalId: managedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // Enable static website hosting for BLUE
 resource blueStaticWebsite 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
   parent: blueStorageAccount
@@ -101,6 +119,48 @@ resource blueWebContainer 'Microsoft.Storage/storageAccounts/blobServices/contai
   properties: {
     publicAccess: enableCdn ? 'None' : 'Blob'
   }
+}
+
+// Deployment script to enable static website hosting on BLUE storage account
+resource blueStaticWebsiteScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
+  name: 'enable-static-website-blue'
+  location: location
+  tags: commonTags
+  kind: 'AzureCLI'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
+  }
+  properties: {
+    azCliVersion: '2.52.0'
+    retentionInterval: 'PT1H'
+    timeout: 'PT5M'
+    cleanupPreference: 'OnSuccess'
+    environmentVariables: [
+      {
+        name: 'STORAGE_ACCOUNT_NAME'
+        value: blueStorageAccount.name
+      }
+      {
+        name: 'RESOURCE_GROUP_NAME'
+        value: resourceGroup().name
+      }
+    ]
+    scriptContent: '''
+      az storage blob service-properties update \
+        --account-name $STORAGE_ACCOUNT_NAME \
+        --resource-group $RESOURCE_GROUP_NAME \
+        --static-website \
+        --404-document index.html \
+        --index-document index.html
+    '''
+  }
+  dependsOn: [
+    blueWebContainer
+    blueStorageRoleAssignment
+  ]
 }
 
 // Storage Account for GREEN environment (conditional)
@@ -151,6 +211,59 @@ resource greenWebContainer 'Microsoft.Storage/storageAccounts/blobServices/conta
   properties: {
     publicAccess: enableCdn ? 'None' : 'Blob'
   }
+}
+
+// Role assignment for managed identity to configure GREEN storage account
+resource greenStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableBlueGreen) {
+  name: guid(greenStorageAccount.id, managedIdentity.id, 'StorageAccountContributor')
+  scope: greenStorageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '17d1049b-9a84-46fb-8f53-869881c3d3ab') // Storage Account Contributor
+    principalId: managedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Deployment script to enable static website hosting on GREEN storage account
+resource greenStaticWebsiteScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (enableBlueGreen) {
+  name: 'enable-static-website-green'
+  location: location
+  tags: commonTags
+  kind: 'AzureCLI'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
+  }
+  properties: {
+    azCliVersion: '2.52.0'
+    retentionInterval: 'PT1H'
+    timeout: 'PT5M'
+    cleanupPreference: 'OnSuccess'
+    environmentVariables: [
+      {
+        name: 'STORAGE_ACCOUNT_NAME'
+        value: greenStorageAccount.name
+      }
+      {
+        name: 'RESOURCE_GROUP_NAME'
+        value: resourceGroup().name
+      }
+    ]
+    scriptContent: '''
+      az storage blob service-properties update \
+        --account-name $STORAGE_ACCOUNT_NAME \
+        --resource-group $RESOURCE_GROUP_NAME \
+        --static-website \
+        --404-document index.html \
+        --index-document index.html
+    '''
+  }
+  dependsOn: [
+    greenWebContainer
+    greenStorageRoleAssignment
+  ]
 }
 
 // CDN Profile (conditional)

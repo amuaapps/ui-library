@@ -80,7 +80,7 @@ pip install checkov
 
 **Using the lint script:**
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 ./lint.sh
 ```
 
@@ -108,7 +108,7 @@ terraform plan
 
 **Using the lint script:**
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 ./lint.sh
 ```
 
@@ -305,8 +305,8 @@ name: Terraform Lint
 on:
   pull_request:
     paths:
-      - 'adapters/aws/**/*.tf'
-      - 'adapters/aws/**/*.hcl'
+      - 'infra/aws/**/*.tf'
+      - 'infra/aws/**/*.hcl'
 
 jobs:
   lint:
@@ -321,15 +321,15 @@ jobs:
       
       - name: Terraform Format
         run: terraform fmt -check -recursive
-        working-directory: adapters/aws/storybook/terraform
+        working-directory: infra/aws/storybook/terraform
       
       - name: Terraform Init
         run: terraform init -backend=false
-        working-directory: adapters/aws/storybook/terraform
+        working-directory: infra/aws/storybook/terraform
       
       - name: Terraform Validate
         run: terraform validate
-        working-directory: adapters/aws/storybook/terraform
+        working-directory: infra/aws/storybook/terraform
       
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
@@ -340,13 +340,13 @@ jobs:
         run: |
           tflint --init
           tflint
-        working-directory: adapters/aws/storybook/terraform
+        working-directory: infra/aws/storybook/terraform
       
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
-          directory: adapters/aws/storybook/terraform
-          config_file: adapters/aws/storybook/terraform/.checkov.yml
+          directory: infra/aws/storybook/terraform
+          config_file: infra/aws/storybook/terraform/.checkov.yml
           soft_fail: false
 ```
 
@@ -358,8 +358,8 @@ name: Bicep Lint
 on:
   pull_request:
     paths:
-      - 'adapters/azure/**/*.bicep'
-      - 'adapters/azure/**/*.json'
+      - 'infra/azure/**/*.bicep'
+      - 'infra/azure/**/*.json'
 
 jobs:
   lint:
@@ -374,16 +374,16 @@ jobs:
       
       - name: Bicep Build
         run: az bicep build --file main.bicep
-        working-directory: adapters/azure/storybook/bicep
+        working-directory: infra/azure/storybook/bicep
       
       - name: Bicep Lint
         run: az bicep lint --file main.bicep
-        working-directory: adapters/azure/storybook/bicep
+        working-directory: infra/azure/storybook/bicep
       
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
-          directory: adapters/azure/storybook/bicep
+          directory: infra/azure/storybook/bicep
           framework: bicep
           soft_fail: false
 ```

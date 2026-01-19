@@ -13,14 +13,14 @@ Verification ensures that:
 
 ## Verification Script
 
-**Location:** `adapters/shared/storybook/verify.sh`
+**Location:** `infra/shared/storybook/verify.sh`
 
 **Purpose:** Automated health checks for Storybook deployments
 
 ### Basic Usage
 
 ```bash
-./adapters/shared/storybook/verify.sh -u <url>
+./infra/shared/storybook/verify.sh -u <url>
 ```
 
 ### Examples
@@ -28,24 +28,24 @@ Verification ensures that:
 **Verify GREEN environment:**
 ```bash
 # AWS
-./adapters/shared/storybook/verify.sh \
+./infra/shared/storybook/verify.sh \
   -u https://storybook-green.example.com
 
 # Azure
-./adapters/shared/storybook/verify.sh \
+./infra/shared/storybook/verify.sh \
   -u https://storagegreen.z13.web.core.windows.net
 ```
 
 **Verbose mode:**
 ```bash
-./adapters/shared/storybook/verify.sh \
+./infra/shared/storybook/verify.sh \
   -u https://storybook-green.example.com \
   --verbose
 ```
 
 **With component checks:**
 ```bash
-./adapters/shared/storybook/verify.sh \
+./infra/shared/storybook/verify.sh \
   -u https://storybook-green.example.com \
   --check-components
 ```
@@ -228,21 +228,21 @@ curl -I https://storybook-green.example.com/project.json
 npm run build-storybook
 
 # 2. Upload to GREEN
-./adapters/shared/storybook/upload-aws.sh -b storybook-green-ui-library-prod
+./infra/shared/storybook/upload-aws.sh -b storybook-green-ui-library-prod
 
 # 3. Wait for propagation (if using CDN)
 sleep 60
 
 # 4. Verify GREEN
-./adapters/shared/storybook/verify.sh -u https://storybook-green.example.com
+./infra/shared/storybook/verify.sh -u https://storybook-green.example.com
 
 # 5. If verification passes, switch
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 terraform apply -var="active_environment=green"
 
 # 6. Verify ACTIVE
 ACTIVE_URL=$(terraform output -raw storybook_url_active)
-./adapters/shared/storybook/verify.sh -u $ACTIVE_URL
+./infra/shared/storybook/verify.sh -u $ACTIVE_URL
 ```
 
 ## CI/CD Integration
@@ -252,7 +252,7 @@ ACTIVE_URL=$(terraform output -raw storybook_url_active)
 ```yaml
 - name: Upload to GREEN
   run: |
-    ./adapters/shared/storybook/upload-aws.sh \
+    ./infra/shared/storybook/upload-aws.sh \
       -b ${{ steps.infra.outputs.green_bucket }} \
       --invalidate \
       --distribution-id ${{ steps.infra.outputs.dist_id }}
@@ -262,19 +262,19 @@ ACTIVE_URL=$(terraform output -raw storybook_url_active)
 
 - name: Verify GREEN Deployment
   run: |
-    ./adapters/shared/storybook/verify.sh \
+    ./infra/shared/storybook/verify.sh \
       -u ${{ steps.infra.outputs.green_url }} \
       --verbose
 
 - name: Switch to GREEN
   if: success()
   run: |
-    cd adapters/aws/storybook/terraform
+    cd infra/aws/storybook/terraform
     terraform apply -var="active_environment=green" -auto-approve
 
 - name: Verify ACTIVE Deployment
   run: |
-    ./adapters/shared/storybook/verify.sh \
+    ./infra/shared/storybook/verify.sh \
       -u ${{ steps.infra.outputs.active_url }} \
       --verbose
 ```
@@ -284,7 +284,7 @@ ACTIVE_URL=$(terraform output -raw storybook_url_active)
 ```yaml
 - name: Upload to GREEN
   run: |
-    ./adapters/shared/storybook/upload-azure.sh \
+    ./infra/shared/storybook/upload-azure.sh \
       -a ${{ steps.infra.outputs.green_account }} \
       --purge-cdn \
       --cdn-profile ${{ steps.infra.outputs.cdn_profile }} \
@@ -296,14 +296,14 @@ ACTIVE_URL=$(terraform output -raw storybook_url_active)
 
 - name: Verify GREEN Deployment
   run: |
-    ./adapters/shared/storybook/verify.sh \
+    ./infra/shared/storybook/verify.sh \
       -u ${{ steps.infra.outputs.green_url }} \
       --verbose
 
 - name: Switch to GREEN
   if: success()
   run: |
-    cd adapters/azure/storybook/bicep
+    cd infra/azure/storybook/bicep
     az deployment group create \
       --resource-group rg-ui-library-prod \
       --template-file main.bicep \
@@ -312,7 +312,7 @@ ACTIVE_URL=$(terraform output -raw storybook_url_active)
 
 - name: Verify ACTIVE Deployment
   run: |
-    ./adapters/shared/storybook/verify.sh \
+    ./infra/shared/storybook/verify.sh \
       -u ${{ steps.infra.outputs.active_url }} \
       --verbose
 ```
@@ -366,7 +366,7 @@ ls -la storybook-static/
 cat storybook-static/index.html | grep "Storybook"
 
 # Re-upload
-./adapters/shared/storybook/upload-aws.sh -b bucket --invalidate --distribution-id id
+./infra/shared/storybook/upload-aws.sh -b bucket --invalidate --distribution-id id
 ```
 
 ### Test 3/4 Fails (Missing Files)
@@ -385,7 +385,7 @@ cat storybook-static/index.html | grep "Storybook"
 aws s3 ls s3://bucket/ --recursive | grep -E "(iframe|project)"
 
 # Re-upload with verbose
-./adapters/shared/storybook/upload-aws.sh -b bucket --verbose
+./infra/shared/storybook/upload-aws.sh -b bucket --verbose
 ```
 
 ### Test 5 Fails (Assets Not Loading)
@@ -487,7 +487,7 @@ done
 
 ```bash
 # Test specific components
-./adapters/shared/storybook/verify.sh \
+./infra/shared/storybook/verify.sh \
   -u https://storybook.example.com \
   --check-components \
   --verbose

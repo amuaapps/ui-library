@@ -57,7 +57,7 @@ test -f storybook-static/index.html && echo "✓ Build successful"
 
 ```bash
 # Get GREEN bucket name from Terraform outputs
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 GREEN_BUCKET=$(terraform output -raw upload_target_green)
 
 # Upload Storybook files
@@ -84,7 +84,7 @@ aws s3 sync storybook-static/ s3://${GREEN_BUCKET}/ \
 
 ```bash
 # Get GREEN storage account from Bicep outputs
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 GREEN_ACCOUNT=$(az deployment group show \
   --resource-group rg-ui-library-${ENVIRONMENT} \
   --name main \
@@ -117,14 +117,14 @@ az storage blob upload-batch \
 
 **AWS:**
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 GREEN_URL=$(terraform output -raw storybook_url_green)
 echo "GREEN URL: ${GREEN_URL}"
 ```
 
 **Azure:**
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 GREEN_URL=$(az deployment group show \
   --resource-group rg-ui-library-${ENVIRONMENT} \
   --name main \
@@ -174,13 +174,13 @@ See `switch.md` for detailed switch commands.
 
 **AWS:**
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 terraform apply -var="active_environment=green"
 ```
 
 **Azure:**
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 az deployment group create \
   --resource-group rg-ui-library-${ENVIRONMENT} \
   --template-file main.bicep \
@@ -249,7 +249,7 @@ jobs:
           
       - name: Switch to GREEN
         run: |
-          cd adapters/aws/storybook/terraform
+          cd infra/aws/storybook/terraform
           terraform apply -auto-approve -var="active_environment=green"
           
       - name: Verify ACTIVE
@@ -272,13 +272,13 @@ If issues are discovered after switching to GREEN:
 
 **AWS:**
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 terraform apply -var="active_environment=blue"
 ```
 
 **Azure:**
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 az deployment group create \
   --resource-group rg-ui-library-${ENVIRONMENT} \
   --template-file main.bicep \

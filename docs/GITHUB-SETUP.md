@@ -506,12 +506,12 @@ At the end of successful run:
 
 ### Documentation
 - [Main README](../README.md)
-- [Adapters Guide](../adapters/README.md)
-- [Verification Checklist](../adapters/VERIFICATION-CHECKLIST.md)
+- [Adapters Guide](../infra/README.md)
+- [Verification Checklist](../infra/VERIFICATION-CHECKLIST.md)
 
 ### Common Issues
-- [Troubleshooting Guide](../adapters/shared/storybook/UPLOAD.md#troubleshooting)
-- [Linting Guide](../adapters/LINTING.md)
+- [Troubleshooting Guide](../infra/shared/storybook/UPLOAD.md#troubleshooting)
+- [Linting Guide](../infra/LINTING.md)
 
 ### GitHub Actions
 - [GitHub OIDC Documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)

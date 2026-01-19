@@ -27,7 +27,7 @@ The blue/green switch updates the active endpoint to point to a different enviro
 **Commands:**
 
 ```bash
-cd adapters/aws/storybook/terraform
+cd infra/aws/storybook/terraform
 
 # Switch to GREEN
 terraform apply -var="active_environment=green" -auto-approve
@@ -66,7 +66,7 @@ aws cloudfront update-distribution \
 **Commands:**
 
 ```bash
-cd adapters/azure/storybook/bicep
+cd infra/azure/storybook/bicep
 
 # Switch to GREEN
 az deployment group create \
@@ -216,11 +216,11 @@ echo "✓ All checks passed"
 1. **Immediate rollback:**
    ```bash
    # AWS
-   cd adapters/aws/storybook/terraform
+   cd infra/aws/storybook/terraform
    terraform apply -var="active_environment=blue" -auto-approve
    
    # Azure
-   cd adapters/azure/storybook/bicep
+   cd infra/azure/storybook/bicep
    az deployment group create \
      --resource-group rg-ui-library-${ENVIRONMENT} \
      --template-file main.bicep \
@@ -319,7 +319,7 @@ jobs:
     steps:
       - name: Switch to GREEN
         run: |
-          cd adapters/aws/storybook/terraform
+          cd infra/aws/storybook/terraform
           terraform apply -var="active_environment=green" -auto-approve
 ```
 
