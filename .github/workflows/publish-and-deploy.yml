@@ -139,11 +139,14 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
           echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
           
-          # Check if this base version already exists in GitHub Packages
-          if npm view "$PACKAGE_NAME@$BASE_VERSION" version 2>/dev/null; then
+          # Check if ANY version matching this base already exists (including -next variants)
+          # Get all published versions and check if any start with our base version
+          PUBLISHED_VERSIONS=$(npm view "$PACKAGE_NAME" versions --json 2>/dev/null || echo "[]")
+          
+          if echo "$PUBLISHED_VERSIONS" | jq -e --arg base "$BASE_VERSION" 'if type == "array" then any(startswith($base)) else . == $base end' > /dev/null 2>&1; then
             echo "should_publish=false" >> $GITHUB_OUTPUT
             echo "candidate_version=$BASE_VERSION" >> $GITHUB_OUTPUT
-            echo "⚠️  Version $BASE_VERSION already published - skipping publish"
+            echo "⚠️  Version $BASE_VERSION (or variant) already published - skipping publish"
             echo "💡 To publish a new version, bump the version in package.json"
           else
             # Version doesn't exist - generate candidate version for pre-release
