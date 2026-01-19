@@ -1,4 +1,5 @@
-export const version = '0.1.0';
+// Version is derived from package.json at build time
+// Access via: import { version } from '@amuaapps/ui-library/package.json'
 
 // Components
 export * from './components/accordion';

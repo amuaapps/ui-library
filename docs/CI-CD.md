@@ -58,9 +58,10 @@ For npm packages, Blue/Green deployment is implemented using dist-tags:
 **Steps:**
 1. Download build artifacts from Stage 2
 2. Configure for GitHub Packages
-3. Determine version (main: `-next.N`, develop: `-dev.N`)
+3. Determine version (`{base}-next.{run_number}`)
 4. Publish to `next` dist-tag
 5. Create deployment marker
+6. **Only runs when package.json version changes**
 
 ### Stage 4: Test Infra + Switch Blue/Green
 
@@ -88,7 +89,7 @@ npm install @amuaapps/ui-library@latest
 npm install @amuaapps/ui-library@next
 
 # Install specific version
-npm install @amuaapps/ui-library@0.1.0-next.42
+npm install @amuaapps/ui-library@1.0.0-next.123
 ```
 
 ### Triggering Releases

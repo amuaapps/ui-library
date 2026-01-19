@@ -54,15 +54,11 @@ That's it! The pipeline handles everything automatically.
 
 ## Version Strategy
 
-### Main Branch
+### All Branches (main, staging, develop)
 - Version format: `{base}-next.{run_number}`
-- Example: `0.1.0-next.42`
-- Intended for: Production-ready candidates
-
-### Develop Branch
-- Version format: `{base}-dev.{run_number}`
-- Example: `0.1.0-dev.42`
-- Intended for: Development testing
+- Example: `1.0.0-next.123`
+- Intended for: Pre-release candidates
+- **Only published when package.json version changes**
 
 ## Blue/Green Deployment
 
@@ -97,7 +93,7 @@ npm install @amuaapps/ui-library@latest
 npm install @amuaapps/ui-library@next
 
 # Install specific version
-npm install @amuaapps/ui-library@0.1.0-next.42
+npm install @amuaapps/ui-library@1.0.0-next.123
 ```
 
 ### Authentication
@@ -199,7 +195,7 @@ npm dist-tag ls @amuaapps/ui-library
 npm login --registry=https://npm.pkg.github.com
 
 # Promote specific version to latest
-npm dist-tag add @amuaapps/ui-library@0.1.0-next.42 latest
+npm dist-tag add @amuaapps/ui-library@1.0.0-next.123 latest
 ```
 
 **⚠️ Warning:** Manual promotion bypasses validation. Only use in emergencies.
@@ -211,7 +207,7 @@ npm dist-tag add @amuaapps/ui-library@0.1.0-next.42 latest
 npm view @amuaapps/ui-library versions
 
 # Point latest to previous version
-npm dist-tag add @amuaapps/ui-library@0.1.0-next.41 latest
+npm dist-tag add @amuaapps/ui-library@1.0.0-next.122 latest
 ```
 
 ## Best Practices
@@ -232,12 +228,12 @@ npm dist-tag add @amuaapps/ui-library@0.1.0-next.41 latest
 
 ### Version Bumping
 
-To bump the base version (e.g., `0.1.0` → `0.2.0`):
+To bump the base version (e.g., `1.0.0` → `1.1.0`):
 
 1. Update `version` in `package.json`
-2. Commit: `git commit -m "chore: bump version to 0.2.0"`
-3. Push to `main` or `develop`
-4. Pipeline will append `-next.N` or `-dev.N` automatically
+2. Commit: `git commit -m "chore: bump version to 1.1.0"`
+3. Push to `main`, `staging`, or `develop`
+4. Pipeline will append `-next.N` automatically
 
 ### Testing GREEN Before Promotion
 

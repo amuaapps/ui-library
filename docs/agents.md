@@ -444,10 +444,10 @@ Version bumps require human decision because:
 For testing and validation before promoting to `latest`:
 
 **Format:** `{base}-{tag}.{number}`
-- Examples: `1.0.0-next.42`, `2.1.0-beta.3`, `1.5.0-rc.1`
+- Examples: `1.0.0-next.123`, `2.1.0-beta.3`, `1.5.0-rc.1`
 
 **Tags:**
-- `next`: Automated CI builds from develop/main (not manually created)
+- `next`: Automated CI builds from main/staging/develop (not manually created)
 - `beta`: Feature testing releases
 - `rc`: Release candidates
 - `alpha`: Early experimental releases
