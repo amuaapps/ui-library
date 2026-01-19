@@ -70,8 +70,8 @@ export const LongContent: Story = {
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p>
-            This is a longer tooltip with more detailed information about the feature or action.
-            It can span multiple lines.
+            This is a longer tooltip with more detailed information about the feature or action. It
+            can span multiple lines.
           </p>
         </TooltipContent>
       </Tooltip>

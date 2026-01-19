@@ -1,9 +1,9 @@
-import * as React from "react";
-import { X } from "lucide-react";
+import * as React from 'react';
+import { X } from 'lucide-react';
 
-import { cn } from "../lib/utils";
-import { Badge } from "./badge";
-import { Command, CommandGroup, CommandItem } from "./command";
+import { cn } from '../lib/utils';
+import { Badge } from './badge';
+import { Command, CommandGroup, CommandItem } from './command';
 
 export type MultiSelectOption = {
   value: string;
@@ -22,7 +22,7 @@ export function MultiSelect({
   options,
   selected,
   onChange,
-  placeholder = "Select items...",
+  placeholder = 'Select items...',
   className,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
@@ -32,7 +32,7 @@ export function MultiSelect({
   };
 
   return (
-    <Command className={cn("overflow-visible bg-transparent", className)}>
+    <Command className={cn('overflow-visible bg-transparent', className)}>
       <div className="group border border-input px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex gap-1 flex-wrap">
           {selected.map((item) => {
@@ -43,7 +43,7 @@ export function MultiSelect({
                 <button
                   className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                    if (e.key === 'Enter') {
                       handleUnselect(item);
                     }
                   }}
@@ -59,7 +59,7 @@ export function MultiSelect({
             );
           })}
           <input
-            placeholder={selected.length === 0 ? placeholder : ""}
+            placeholder={selected.length === 0 ? placeholder : ''}
             className="ml-2 bg-transparent outline-none placeholder:text-muted-foreground flex-1"
             onFocus={() => setOpen(true)}
             onBlur={() => setOpen(false)}
@@ -86,14 +86,14 @@ export function MultiSelect({
                         onChange([...selected, option.value]);
                       }
                     }}
-                    className={"cursor-pointer"}
+                    className={'cursor-pointer'}
                   >
                     <div
                       className={cn(
-                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                        'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
                         isSelected
-                          ? "bg-primary text-primary-foreground"
-                          : "opacity-50 [&_svg]:invisible"
+                          ? 'bg-primary text-primary-foreground'
+                          : 'opacity-50 [&_svg]:invisible'
                       )}
                     >
                       <X className="h-4 w-4" />

@@ -63,11 +63,7 @@ export const LongForm: Story = {
     <div className="w-[450px] space-y-4">
       <div className="space-y-2">
         <Label htmlFor="bio">Bio</Label>
-        <Textarea
-          id="bio"
-          placeholder="Tell us about yourself"
-          className="min-h-[100px]"
-        />
+        <Textarea id="bio" placeholder="Tell us about yourself" className="min-h-[100px]" />
         <p className="text-sm text-muted-foreground">
           You can @mention other users and organizations.
         </p>

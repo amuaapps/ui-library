@@ -1,15 +1,15 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { toast } from "sonner";
-import { Button } from "./button";
-import { SonnerToaster } from "./sonner";
+import type { Meta, StoryObj } from '@storybook/react';
+import { toast } from 'sonner';
+import { Button } from './button';
+import { SonnerToaster } from './sonner';
 
 const meta = {
-  title: "Components/Sonner",
+  title: 'Components/Sonner',
   component: SonnerToaster,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof SonnerToaster>;
 
 export default meta;
@@ -21,11 +21,11 @@ export const Default: Story = {
       <Button
         variant="outline"
         onClick={() =>
-          toast("Event has been created", {
-            description: "Sunday, December 03, 2023 at 9:00 AM",
+          toast('Event has been created', {
+            description: 'Sunday, December 03, 2023 at 9:00 AM',
             action: {
-              label: "Undo",
-              onClick: () => console.log("Undo"),
+              label: 'Undo',
+              onClick: () => console.log('Undo'),
             },
           })
         }
@@ -40,10 +40,7 @@ export const Default: Story = {
 export const Success: Story = {
   render: () => (
     <div>
-      <Button
-        variant="outline"
-        onClick={() => toast.success("Event has been created")}
-      >
+      <Button variant="outline" onClick={() => toast.success('Event has been created')}>
         Show Success Toast
       </Button>
       <SonnerToaster />
@@ -54,10 +51,7 @@ export const Success: Story = {
 export const Error: Story = {
   render: () => (
     <div>
-      <Button
-        variant="outline"
-        onClick={() => toast.error("Event has not been created")}
-      >
+      <Button variant="outline" onClick={() => toast.error('Event has not been created')}>
         Show Error Toast
       </Button>
       <SonnerToaster />

@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { useState } from "react";
-import { Calendar } from "./calendar";
+import type { Meta, StoryObj } from '@storybook/react';
+import { useState } from 'react';
+import { Calendar } from './calendar';
 
 const meta = {
-  title: "Components/Calendar",
+  title: 'Components/Calendar',
   component: Calendar,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof Calendar>;
 
 export default meta;
@@ -18,12 +18,7 @@ export const Default: Story = {
   render: () => {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
-      <Calendar
-        mode="single"
-        selected={date}
-        onSelect={setDate}
-        className="rounded-md border"
-      />
+      <Calendar mode="single" selected={date} onSelect={setDate} className="rounded-md border" />
     );
   },
 };
@@ -35,12 +30,7 @@ export const Range: Story = {
       to: new Date(2024, 0, 30),
     });
     return (
-      <Calendar
-        mode="range"
-        selected={date}
-        onSelect={setDate}
-        className="rounded-md border"
-      />
+      <Calendar mode="range" selected={date} onSelect={setDate} className="rounded-md border" />
     );
   },
 };

@@ -14,9 +14,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const tags = Array.from({ length: 50 }).map(
-  (_, i, a) => `v1.2.0-beta.${a.length - i}`
-);
+const tags = Array.from({ length: 50 }).map((_, i, a) => `v1.2.0-beta.${a.length - i}`);
 
 export const Default: Story = {
   render: () => (
@@ -52,14 +50,12 @@ export const Horizontal: Story = {
 export const LongContent: Story = {
   render: () => (
     <ScrollArea className="h-[400px] w-[350px] rounded-md border p-4">
-      <h4 className="mb-4 text-sm font-medium leading-none">
-        Terms and Conditions
-      </h4>
+      <h4 className="mb-4 text-sm font-medium leading-none">Terms and Conditions</h4>
       {Array.from({ length: 20 }).map((_, i) => (
         <p key={i} className="mb-4 text-sm">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-          ad minim veniam, quis nostrud exercitation ullamco laboris.
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt
+          ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+          ullamco laboris.
         </p>
       ))}
     </ScrollArea>

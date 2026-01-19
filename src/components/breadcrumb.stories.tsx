@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from '@storybook/react';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -7,15 +7,15 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
-} from "./breadcrumb";
+} from './breadcrumb';
 
 const meta = {
-  title: "Components/Breadcrumb",
+  title: 'Components/Breadcrumb',
   component: Breadcrumb,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof Breadcrumb>;
 
 export default meta;

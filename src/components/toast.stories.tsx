@@ -1,15 +1,15 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Button } from "./button";
-import { Toaster } from "./toaster";
-import { useToast } from "./use-toast";
+import type { Meta, StoryObj } from '@storybook/react';
+import { Button } from './button';
+import { Toaster } from './toaster';
+import { useToast } from './use-toast';
 
 const meta = {
-  title: "Components/Toast",
+  title: 'Components/Toast',
   component: Toaster,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof Toaster>;
 
 export default meta;
@@ -24,8 +24,8 @@ function ToastDemo() {
         variant="outline"
         onClick={() => {
           toast({
-            title: "Scheduled: Catch up ",
-            description: "Friday, February 10, 2023 at 5:57 PM",
+            title: 'Scheduled: Catch up ',
+            description: 'Friday, February 10, 2023 at 5:57 PM',
           });
         }}
       >
@@ -49,8 +49,8 @@ function ToastWithAction() {
         variant="outline"
         onClick={() => {
           toast({
-            title: "Uh oh! Something went wrong.",
-            description: "There was a problem with your request.",
+            title: 'Uh oh! Something went wrong.',
+            description: 'There was a problem with your request.',
             action: <Button variant="outline">Try again</Button>,
           });
         }}
@@ -75,9 +75,9 @@ function DestructiveToast() {
         variant="outline"
         onClick={() => {
           toast({
-            variant: "destructive",
-            title: "Uh oh! Something went wrong.",
-            description: "There was a problem with your request.",
+            variant: 'destructive',
+            title: 'Uh oh! Something went wrong.',
+            description: 'There was a problem with your request.',
           });
         }}
       >

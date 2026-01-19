@@ -25,16 +25,10 @@ export const Default: Story = {
           </Button>
         </CollapsibleTrigger>
       </div>
-      <div className="rounded-md border px-4 py-2 text-sm">
-        @radix-ui/primitives
-      </div>
+      <div className="rounded-md border px-4 py-2 text-sm">@radix-ui/primitives</div>
       <CollapsibleContent className="space-y-2">
-        <div className="rounded-md border px-4 py-2 text-sm">
-          @radix-ui/colors
-        </div>
-        <div className="rounded-md border px-4 py-2 text-sm">
-          @stitches/react
-        </div>
+        <div className="rounded-md border px-4 py-2 text-sm">@radix-ui/colors</div>
+        <div className="rounded-md border px-4 py-2 text-sm">@stitches/react</div>
       </CollapsibleContent>
     </Collapsible>
   ),
@@ -52,15 +46,9 @@ export const DefaultOpen: Story = {
         </CollapsibleTrigger>
       </div>
       <CollapsibleContent className="space-y-2">
-        <div className="rounded-md border px-4 py-2 text-sm">
-          Repository 1
-        </div>
-        <div className="rounded-md border px-4 py-2 text-sm">
-          Repository 2
-        </div>
-        <div className="rounded-md border px-4 py-2 text-sm">
-          Repository 3
-        </div>
+        <div className="rounded-md border px-4 py-2 text-sm">Repository 1</div>
+        <div className="rounded-md border px-4 py-2 text-sm">Repository 2</div>
+        <div className="rounded-md border px-4 py-2 text-sm">Repository 3</div>
       </CollapsibleContent>
     </Collapsible>
   ),

@@ -1,0 +1,566 @@
+name: Publish Library & Deploy Storybook
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - dev
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      force_publish:
+        description: 'Force library publish (ignore version check)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write        # Required for OIDC
+  contents: read
+  packages: write        # Required for npm publish
+  security-events: write # Required for CodeQL
+
+jobs:
+  # Step 1: Test
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for version comparison
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+      
+      - name: Run Linter
+        run: npm run lint
+      
+      - name: Run Type Check
+        run: npm run typecheck
+      
+      - name: Run Tests
+        run: npm test
+      
+      - name: Run Security Audit
+        run: npm audit --audit-level=high
+        continue-on-error: false
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # Step 2: Build
+  build:
+    name: Build Library & Storybook
+    runs-on: ubuntu-latest
+    needs: test
+    outputs:
+      version_changed: ${{ steps.version-check.outputs.changed }}
+      current_version: ${{ steps.version-check.outputs.version }}
+      environment: ${{ steps.env-detect.outputs.environment }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+      
+      - name: Detect Environment
+        id: env-detect
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV="${{ inputs.environment }}"
+          else
+            case "${{ github.ref_name }}" in
+              main) ENV="prod" ;;
+              staging) ENV="staging" ;;
+              dev|*) ENV="dev" ;;
+            esac
+          fi
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "Environment: $ENV"
+      
+      - name: Check Version Bump
+        id: version-check
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          
+          # Get latest published version from npm registry
+          NPM_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "0.0.0")
+          
+          echo "Current version: $CURRENT_VERSION"
+          echo "Published version: $NPM_VERSION"
+          
+          # Compare versions using node semver logic
+          SHOULD_PUBLISH=$(node -e "
+            const current = '$CURRENT_VERSION';
+            const published = '$NPM_VERSION';
+            const currentParts = current.split('.').map(Number);
+            const publishedParts = published.split('.').map(Number);
+            
+            for (let i = 0; i < 3; i++) {
+              if (currentParts[i] > publishedParts[i]) {
+                console.log('true');
+                process.exit(0);
+              }
+              if (currentParts[i] < publishedParts[i]) {
+                console.log('false');
+                process.exit(0);
+              }
+            }
+            console.log('false');
+          ")
+          
+          if [ "$SHOULD_PUBLISH" = "true" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✓ Version bump detected: $NPM_VERSION → $CURRENT_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No version bump detected (current: $CURRENT_VERSION, published: $NPM_VERSION)"
+          fi
+      
+      - name: Build Library
+        run: npm run build
+      
+      - name: Build Storybook
+        run: npm run build-storybook
+      
+      - name: Upload Library Artifacts
+        if: steps.version-check.outputs.changed == 'true' || github.event.inputs.force_publish == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: library-dist
+          path: dist/
+          retention-days: 7
+      
+      - name: Upload Storybook Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: storybook-static/
+          retention-days: 7
+
+  # Step 3: Publish Library (Optional - only if version changed)
+  publish:
+    name: Publish Library to NPM
+    runs-on: ubuntu-latest
+    needs: build
+    if: needs.build.outputs.version_changed == 'true' || github.event.inputs.force_publish == 'true'
+    environment: ${{ needs.build.outputs.environment }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@amuaapps'
+      
+      - name: Download Library Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: library-dist
+          path: dist/
+      
+      - name: Remove prepare script
+        run: |
+          node -e "const pkg = require('./package.json'); delete pkg.scripts.prepare; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+      
+      - name: Configure npm authentication
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
+      
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create Git Tag
+        if: needs.build.outputs.environment == 'prod'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ needs.build.outputs.current_version }}" -m "Release v${{ needs.build.outputs.current_version }}"
+          git push origin "v${{ needs.build.outputs.current_version }}"
+
+  # Step 4: Deploy Storybook
+  deploy:
+    name: Deploy Storybook
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    environment: ${{ needs.build.outputs.environment }}
+    outputs:
+      provider: ${{ steps.detect-provider.outputs.provider }}
+      green_url: ${{ steps.deploy-azure.outputs.green_url || steps.deploy-aws.outputs.green_url }}
+      resource_group: ${{ steps.deploy-azure.outputs.resource_group || steps.deploy-aws.outputs.resource_group }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Download Storybook Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: storybook-static
+          path: storybook-static/
+      
+      - name: Detect Cloud Provider
+        id: detect-provider
+        run: |
+          if [ -n "${{ vars.AZURE_SUBSCRIPTION_ID }}" ] && [ -n "${{ vars.AZURE_TENANT_ID }}" ]; then
+            echo "provider=azure" >> $GITHUB_OUTPUT
+            echo "✓ Detected Azure configuration"
+          elif [ -n "${{ vars.AWS_REGION }}" ] && [ -n "${{ vars.AWS_ROLE_ARN }}" ]; then
+            echo "provider=aws" >> $GITHUB_OUTPUT
+            echo "✓ Detected AWS configuration"
+          else
+            echo "❌ No cloud provider configured"
+            echo "Configure Azure or AWS environment variables in GitHub"
+            exit 1
+          fi
+      
+      # Azure Deployment
+      - name: Azure Login (OIDC)
+        if: steps.detect-provider.outputs.provider == 'azure'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy to Azure
+        if: steps.detect-provider.outputs.provider == 'azure'
+        id: deploy-azure
+        run: |
+          # Install Bicep
+          az bicep install
+          
+          # Set resource group
+          if [ -n "${{ vars.AZURE_RESOURCE_GROUP_NAME }}" ]; then
+            RG="${{ vars.AZURE_RESOURCE_GROUP_NAME }}"
+          else
+            RG="rg-ui-library-${{ needs.build.outputs.environment }}"
+          fi
+          
+          REGION="${{ vars.AZURE_REGION || 'eastus' }}"
+          
+          echo "Resource Group: $RG"
+          echo "Region: $REGION"
+          
+          # Verify resource group exists
+          if az group show --name "$RG" &> /dev/null; then
+            echo "✓ Resource group $RG exists"
+          else
+            echo "❌ Error: Resource group $RG does not exist"
+            echo "Please create the resource group first:"
+            echo "  az group create --name $RG --location $REGION"
+            exit 1
+          fi
+          
+          # Generate parameters
+          cd adapters/azure/storybook/bicep
+          cat > parameters.generated.json <<EOF
+          {
+            "\$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+              "projectName": { "value": "ui-library" },
+              "environment": { "value": "${{ needs.build.outputs.environment }}" },
+              "location": { "value": "$REGION" },
+              "enableBlueGreen": { "value": true },
+              "enableCdn": { "value": false },
+              "customDomainName": { "value": "${{ vars.AZURE_CUSTOM_DOMAIN || '' }}" },
+              "dnsZoneResourceId": { "value": "${{ vars.AZURE_DNS_ZONE_ID || '' }}" },
+              "retentionPolicyDays": { "value": 30 },
+              "tags": {
+                "value": {
+                  "Project": "UI Library",
+                  "Environment": "${{ needs.build.outputs.environment }}",
+                  "ManagedBy": "GitHub Actions"
+                }
+              },
+              "activeEnvironment": { "value": "blue" }
+            }
+          }
+          EOF
+          
+          # Deploy infrastructure
+          DEPLOYMENT_NAME="storybook-$(date +%Y%m%d-%H%M%S)"
+          az deployment group create \
+            --resource-group "$RG" \
+            --template-file main.bicep \
+            --parameters parameters.generated.json \
+            --name "$DEPLOYMENT_NAME"
+          
+          # Get outputs using the deployment name
+          BLUE_ACCOUNT=$(az deployment group show \
+            --resource-group "$RG" \
+            --name "$DEPLOYMENT_NAME" \
+            --query 'properties.outputs.uploadTargetBlue.value' \
+            --output tsv)
+          GREEN_ACCOUNT=$(az deployment group show \
+            --resource-group "$RG" \
+            --name "$DEPLOYMENT_NAME" \
+            --query 'properties.outputs.uploadTargetGreen.value' \
+            --output tsv)
+          
+          GREEN_URL=$(az deployment group show \
+            --resource-group "$RG" \
+            --name "$DEPLOYMENT_NAME" \
+            --query 'properties.outputs.storybookUrlGreen.value' \
+            --output tsv)
+          
+          CDN_PROFILE=$(az deployment group show \
+            --resource-group "$RG" \
+            --name "$DEPLOYMENT_NAME" \
+            --query 'properties.outputs.cdnProfileName.value' \
+            --output tsv 2>/dev/null || echo "")
+          
+          CDN_ENDPOINT=$(az deployment group show \
+            --resource-group "$RG" \
+            --name "$DEPLOYMENT_NAME" \
+            --query 'properties.outputs.cdnEndpointName.value' \
+            --output tsv 2>/dev/null || echo "")
+          
+          # Enable static website hosting on both storage accounts
+          echo "Enabling static website hosting..."
+          az storage blob service-properties update \
+            --account-name "$BLUE_ACCOUNT" \
+            --static-website \
+            --404-document index.html \
+            --index-document index.html
+          
+          az storage blob service-properties update \
+            --account-name "$GREEN_ACCOUNT" \
+            --static-website \
+            --404-document index.html \
+            --index-document index.html
+          
+          echo "green_account=$GREEN_ACCOUNT" >> $GITHUB_OUTPUT
+          echo "green_url=$GREEN_URL" >> $GITHUB_OUTPUT
+          echo "cdn_profile=$CDN_PROFILE" >> $GITHUB_OUTPUT
+          echo "cdn_endpoint=$CDN_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "resource_group=$RG" >> $GITHUB_OUTPUT
+          
+          # Upload to GREEN
+          cd ../../../../
+          chmod +x adapters/shared/storybook/upload-azure.sh
+          
+          if [ -n "$CDN_PROFILE" ] && [ -n "$CDN_ENDPOINT" ]; then
+            ./adapters/shared/storybook/upload-azure.sh \
+              -a "$GREEN_ACCOUNT" \
+              -g "$RG" \
+              --purge-cdn \
+              --cdn-profile "$CDN_PROFILE" \
+              --cdn-endpoint "$CDN_ENDPOINT"
+          else
+            ./adapters/shared/storybook/upload-azure.sh \
+              -a "$GREEN_ACCOUNT" \
+              -g "$RG"
+          fi
+          
+          echo "✓ Deployed to Azure GREEN environment"
+          echo "URL: $GREEN_URL"
+      
+      # AWS Deployment
+      - name: Configure AWS Credentials (OIDC)
+        if: steps.detect-provider.outputs.provider == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      
+      - name: Deploy to AWS
+        if: steps.detect-provider.outputs.provider == 'aws'
+        id: deploy-aws
+        run: |
+          # Install Terraform
+          wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install terraform
+          
+          cd adapters/aws/storybook/terraform
+          
+          # Generate tfvars
+          cat > terraform.auto.tfvars <<EOF
+          project_name        = "ui-library"
+          environment         = "${{ needs.build.outputs.environment }}"
+          region              = "${{ vars.AWS_REGION }}"
+          enable_blue_green   = true
+          enable_cdn          = true
+          custom_domain_name  = "${{ vars.AWS_CUSTOM_DOMAIN || '' }}"
+          route53_zone_id     = "${{ vars.AWS_ROUTE53_ZONE_ID || '' }}"
+          retention_policy_days = 30
+          tags = {
+            Project     = "UI Library"
+            Environment = "${{ needs.build.outputs.environment }}"
+            ManagedBy   = "GitHub Actions"
+          }
+          EOF
+          
+          # Initialize and deploy
+          terraform init
+          terraform apply -auto-approve
+          
+          # Get outputs
+          GREEN_BUCKET=$(terraform output -raw upload_target_green)
+          GREEN_URL=$(terraform output -raw storybook_url_green)
+          DIST_ID=$(terraform output -raw cdn_distribution_id 2>/dev/null || echo "")
+          
+          echo "green_bucket=$GREEN_BUCKET" >> $GITHUB_OUTPUT
+          echo "green_url=$GREEN_URL" >> $GITHUB_OUTPUT
+          echo "distribution_id=$DIST_ID" >> $GITHUB_OUTPUT
+          
+          # Upload to GREEN
+          cd ../../../../
+          chmod +x adapters/shared/storybook/upload-aws.sh
+          
+          if [ -n "$DIST_ID" ]; then
+            ./adapters/shared/storybook/upload-aws.sh \
+              -b "$GREEN_BUCKET" \
+              --invalidate \
+              --distribution-id "$DIST_ID"
+          else
+            ./adapters/shared/storybook/upload-aws.sh \
+              -b "$GREEN_BUCKET"
+          fi
+          
+          echo "✓ Deployed to AWS GREEN environment"
+          echo "URL: $GREEN_URL"
+
+  # Step 5: Verify & Switch Blue-Green
+  switch:
+    name: Verify & Switch to GREEN
+    runs-on: ubuntu-latest
+    needs: [build, deploy]
+    environment: ${{ needs.build.outputs.environment }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Wait for Storage Propagation
+        run: |
+          echo "Waiting 10 seconds for storage propagation..."
+          sleep 10
+      
+      - name: Verify GREEN Deployment
+        run: |
+          chmod +x adapters/shared/storybook/verify.sh
+          ./adapters/shared/storybook/verify.sh \
+            -u "${{ needs.deploy.outputs.green_url }}" \
+            --verbose
+      
+      # Azure Switch
+      - name: Azure Login (OIDC)
+        if: needs.deploy.outputs.provider == 'azure'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Switch to GREEN (Azure)
+        if: needs.deploy.outputs.provider == 'azure'
+        run: |
+          cd adapters/azure/storybook/bicep
+          
+          # Create parameters.json for the switch script
+          cat > parameters.json <<EOF
+          {
+            "\$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+              "projectName": { "value": "ui-library" },
+              "environment": { "value": "${{ needs.build.outputs.environment }}" },
+              "location": { "value": "${{ vars.AZURE_REGION || 'eastus' }}" },
+              "enableBlueGreen": { "value": true },
+              "enableCdn": { "value": false },
+              "customDomainName": { "value": "${{ vars.AZURE_CUSTOM_DOMAIN || '' }}" },
+              "dnsZoneResourceId": { "value": "${{ vars.AZURE_DNS_ZONE_ID || '' }}" },
+              "retentionPolicyDays": { "value": 30 },
+              "tags": {
+                "value": {
+                  "Project": "UI Library",
+                  "Environment": "${{ needs.build.outputs.environment }}",
+                  "ManagedBy": "GitHub Actions"
+                }
+              },
+              "activeEnvironment": { "value": "green" }
+            }
+          }
+          EOF
+          
+          chmod +x switch.sh
+          ./switch.sh green -g "${{ needs.deploy.outputs.resource_group }}" --auto-approve
+      
+      # AWS Switch
+      - name: Configure AWS Credentials (OIDC)
+        if: needs.deploy.outputs.provider == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      
+      - name: Switch to GREEN (AWS)
+        if: needs.deploy.outputs.provider == 'aws'
+        run: |
+          # Install Terraform
+          wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install terraform
+          
+          cd adapters/aws/storybook/terraform
+          terraform init
+          chmod +x switch.sh
+          ./switch.sh green --auto-approve
+      
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Complete ✓" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ needs.build.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Provider:** ${{ needs.deploy.outputs.provider }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Storybook URL:** ${{ needs.deploy.outputs.green_url }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.build.outputs.version_changed }}" = "true" ]; then
+            echo "**Library Version:** v${{ needs.build.outputs.current_version }} (published)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Library:** No version change (not published)" >> $GITHUB_STEP_SUMMARY
+          fi

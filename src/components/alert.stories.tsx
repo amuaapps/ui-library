@@ -24,9 +24,7 @@ export const Default: Story = {
   render: () => (
     <Alert className="w-[400px]">
       <AlertTitle>Heads up!</AlertTitle>
-      <AlertDescription>
-        You can add components to your app using the cli.
-      </AlertDescription>
+      <AlertDescription>You can add components to your app using the cli.</AlertDescription>
     </Alert>
   ),
 };
@@ -35,9 +33,7 @@ export const Destructive: Story = {
   render: () => (
     <Alert variant="destructive" className="w-[400px]">
       <AlertTitle>Error</AlertTitle>
-      <AlertDescription>
-        Your session has expired. Please log in again.
-      </AlertDescription>
+      <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
     </Alert>
   ),
 };
@@ -53,9 +49,7 @@ export const TitleOnly: Story = {
 export const DescriptionOnly: Story = {
   render: () => (
     <Alert className="w-[400px]">
-      <AlertDescription>
-        This is a simple alert with only a description.
-      </AlertDescription>
+      <AlertDescription>This is a simple alert with only a description.</AlertDescription>
     </Alert>
   ),
 };

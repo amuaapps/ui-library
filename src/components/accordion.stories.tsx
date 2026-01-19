@@ -1,10 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from './accordion';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './accordion';
 
 const meta = {
   title: 'Components/Accordion',
@@ -23,9 +18,7 @@ export const Default: Story = {
     <Accordion type="single" collapsible className="w-[450px]">
       <AccordionItem value="item-1">
         <AccordionTrigger>Is it accessible?</AccordionTrigger>
-        <AccordionContent>
-          Yes. It adheres to the WAI-ARIA design pattern.
-        </AccordionContent>
+        <AccordionContent>Yes. It adheres to the WAI-ARIA design pattern.</AccordionContent>
       </AccordionItem>
       <AccordionItem value="item-2">
         <AccordionTrigger>Is it styled?</AccordionTrigger>
@@ -54,15 +47,11 @@ export const Multiple: Story = {
       </AccordionItem>
       <AccordionItem value="item-2">
         <AccordionTrigger>Section 2</AccordionTrigger>
-        <AccordionContent>
-          Try opening multiple sections simultaneously.
-        </AccordionContent>
+        <AccordionContent>Try opening multiple sections simultaneously.</AccordionContent>
       </AccordionItem>
       <AccordionItem value="item-3">
         <AccordionTrigger>Section 3</AccordionTrigger>
-        <AccordionContent>
-          All sections can be open at once.
-        </AccordionContent>
+        <AccordionContent>All sections can be open at once.</AccordionContent>
       </AccordionItem>
     </Accordion>
   ),

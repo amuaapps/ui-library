@@ -1,17 +1,13 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "./resizable";
+import type { Meta, StoryObj } from '@storybook/react';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './resizable';
 
 const meta = {
-  title: "Components/Resizable",
+  title: 'Components/Resizable',
   component: ResizablePanelGroup,
   parameters: {
-    layout: "padded",
+    layout: 'padded',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof ResizablePanelGroup>;
 
 export default meta;
@@ -19,10 +15,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (
-    <ResizablePanelGroup
-      direction="horizontal"
-      className="max-w-md rounded-lg border"
-    >
+    <ResizablePanelGroup direction="horizontal" className="max-w-md rounded-lg border">
       <ResizablePanel defaultSize={50}>
         <div className="flex h-[200px] items-center justify-center p-6">
           <span className="font-semibold">One</span>
@@ -40,10 +33,7 @@ export const Default: Story = {
 
 export const Vertical: Story = {
   render: () => (
-    <ResizablePanelGroup
-      direction="vertical"
-      className="min-h-[200px] max-w-md rounded-lg border"
-    >
+    <ResizablePanelGroup direction="vertical" className="min-h-[200px] max-w-md rounded-lg border">
       <ResizablePanel defaultSize={25}>
         <div className="flex h-full items-center justify-center p-6">
           <span className="font-semibold">Header</span>

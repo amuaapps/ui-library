@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Bold, Italic, Underline } from "lucide-react";
-import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
+import type { Meta, StoryObj } from '@storybook/react';
+import { Bold, Italic, Underline } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from './toggle-group';
 
 const meta = {
-  title: "Components/ToggleGroup",
+  title: 'Components/ToggleGroup',
   component: ToggleGroup,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof ToggleGroup>;
 
 export default meta;

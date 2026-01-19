@@ -1,20 +1,20 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Card, CardContent } from "./card";
+import type { Meta, StoryObj } from '@storybook/react';
+import { Card, CardContent } from './card';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "./carousel";
+} from './carousel';
 
 const meta = {
-  title: "Components/Carousel",
+  title: 'Components/Carousel',
   component: Carousel,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof Carousel>;
 
 export default meta;
@@ -46,7 +46,7 @@ export const Multiple: Story = {
   render: () => (
     <Carousel
       opts={{
-        align: "start",
+        align: 'start',
       }}
       className="w-full max-w-sm"
     >

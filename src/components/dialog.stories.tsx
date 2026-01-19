@@ -97,9 +97,7 @@ export const ScrollableContent: Story = {
       <DialogContent className="max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Terms of Service</DialogTitle>
-          <DialogDescription>
-            Please read our terms of service carefully.
-          </DialogDescription>
+          <DialogDescription>Please read our terms of service carefully.</DialogDescription>
         </DialogHeader>
         <div className="overflow-y-auto space-y-4 py-4">
           {Array.from({ length: 10 }).map((_, i) => (

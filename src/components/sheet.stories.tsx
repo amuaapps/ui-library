@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Button } from "./button";
+import type { Meta, StoryObj } from '@storybook/react';
+import { Button } from './button';
 import {
   Sheet,
   SheetClose,
@@ -9,15 +9,15 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "./sheet";
+} from './sheet';
 
 const meta = {
-  title: "Components/Sheet",
+  title: 'Components/Sheet',
   component: Sheet,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof Sheet>;
 
 export default meta;
@@ -69,9 +69,7 @@ export const Left: Story = {
       <SheetContent side="left">
         <SheetHeader>
           <SheetTitle>Left Sheet</SheetTitle>
-          <SheetDescription>
-            This sheet opens from the left side.
-          </SheetDescription>
+          <SheetDescription>This sheet opens from the left side.</SheetDescription>
         </SheetHeader>
       </SheetContent>
     </Sheet>
@@ -87,9 +85,7 @@ export const Top: Story = {
       <SheetContent side="top">
         <SheetHeader>
           <SheetTitle>Top Sheet</SheetTitle>
-          <SheetDescription>
-            This sheet opens from the top.
-          </SheetDescription>
+          <SheetDescription>This sheet opens from the top.</SheetDescription>
         </SheetHeader>
       </SheetContent>
     </Sheet>

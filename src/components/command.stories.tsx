@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Calculator, Calendar, CreditCard, Settings, Smile, User } from "lucide-react";
+import type { Meta, StoryObj } from '@storybook/react';
+import { Calculator, Calendar, CreditCard, Settings, Smile, User } from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -9,15 +9,15 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "./command";
+} from './command';
 
 const meta = {
-  title: "Components/Command",
+  title: 'Components/Command',
   component: Command,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof Command>;
 
 export default meta;

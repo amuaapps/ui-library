@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { useEffect, useState } from "react";
-import { Progress } from "./progress";
+import type { Meta, StoryObj } from '@storybook/react';
+import { useEffect, useState } from 'react';
+import { Progress } from './progress';
 
 const meta = {
-  title: "Components/Progress",
+  title: 'Components/Progress',
   component: Progress,
   parameters: {
-    layout: "centered",
+    layout: 'centered',
   },
-  tags: ["autodocs"],
+  tags: ['autodocs'],
 } satisfies Meta<typeof Progress>;
 
 export default meta;
@@ -17,7 +17,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     value: 60,
-    className: "w-[60%]",
+    className: 'w-[60%]',
   },
 };
 
@@ -37,13 +37,13 @@ export const Animated: Story = {
 export const Complete: Story = {
   args: {
     value: 100,
-    className: "w-[60%]",
+    className: 'w-[60%]',
   },
 };
 
 export const Empty: Story = {
   args: {
     value: 0,
-    className: "w-[60%]",
+    className: 'w-[60%]',
   },
 };

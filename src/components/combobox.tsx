@@ -1,16 +1,10 @@
-import * as React from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import * as React from 'react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 
-import { cn } from "../lib/utils";
-import { Button } from "./button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "./command";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { cn } from '../lib/utils';
+import { Button } from './button';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from './command';
+import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 export type ComboboxOption = {
   value: string;
@@ -30,9 +24,9 @@ export function Combobox({
   options,
   value,
   onValueChange,
-  placeholder = "Select option...",
-  searchPlaceholder = "Search...",
-  emptyText = "No option found.",
+  placeholder = 'Select option...',
+  searchPlaceholder = 'Search...',
+  emptyText = 'No option found.',
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -45,9 +39,7 @@ export function Combobox({
           aria-expanded={open}
           className="w-[200px] justify-between"
         >
-          {value
-            ? options.find((option) => option.value === value)?.label
-            : placeholder}
+          {value ? options.find((option) => option.value === value)?.label : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -61,14 +53,14 @@ export function Combobox({
                 key={option.value}
                 value={option.value}
                 onSelect={(currentValue: string) => {
-                  onValueChange?.(currentValue === value ? "" : currentValue);
+                  onValueChange?.(currentValue === value ? '' : currentValue);
                   setOpen(false);
                 }}
               >
                 <Check
                   className={cn(
-                    "mr-2 h-4 w-4",
-                    value === option.value ? "opacity-100" : "opacity-0"
+                    'mr-2 h-4 w-4',
+                    value === option.value ? 'opacity-100' : 'opacity-0'
                   )}
                 />
                 {option.label}
