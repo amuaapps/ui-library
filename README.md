@@ -36,6 +36,13 @@ This repository follows strict coding standards and design contracts:
   - Color, typography, spacing, radius, elevation, and motion tokens
   - **No hardcoded values allowed** — all styling must use tokens
 
+- **[`docs/tokens.md`](docs/tokens.md)** — Contributor guide for token usage (v1.0.0)
+  - Typography tokens (`text-ui-*`)
+  - Control sizing tokens (`h-ui-control-*`, `px-ui-control-px-*`, `py-ui-control-py-*`)
+  - Elevation tokens (`shadow-ui-*`)
+  - When raw Tailwind values are allowed (layout-only)
+  - **Required reading for contributors** — ensures future components stay token-compliant
+
 - **[`docs/PACKAGING.md`](docs/PACKAGING.md)** — Packaging strategy and import patterns (v1.0.0)
   - Tree-shakeable ESM exports (`sideEffects: false`)
   - Subpath imports for selective component loading
