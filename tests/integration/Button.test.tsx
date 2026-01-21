@@ -70,25 +70,25 @@ describe('Button Component', () => {
     it('applies default size styles', () => {
       render(<Button size="default">Default Size</Button>);
       const button = screen.getByRole('button');
-      expect(button.className).toContain('h-10');
+      expect(button.className).toContain('h-ui-control-md');
     });
 
     it('applies sm size styles', () => {
       render(<Button size="sm">Small</Button>);
       const button = screen.getByRole('button');
-      expect(button.className).toContain('h-9');
+      expect(button.className).toContain('h-ui-control-sm');
     });
 
     it('applies lg size styles', () => {
       render(<Button size="lg">Large</Button>);
       const button = screen.getByRole('button');
-      expect(button.className).toContain('h-11');
+      expect(button.className).toContain('h-ui-control-lg');
     });
 
     it('applies icon size styles', () => {
       render(<Button size="icon">Icon</Button>);
       const button = screen.getByRole('button');
-      expect(button.className).toContain('w-10');
+      expect(button.className).toContain('size-ui-control-icon');
     });
   });
 

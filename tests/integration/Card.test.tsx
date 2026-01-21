@@ -80,7 +80,7 @@ describe('Card Component', () => {
       );
       const description = screen.getByText('Description');
       
-      expect(description.className).toContain('text-sm');
+      expect(description.className).toContain('text-ui-body-sm');
       expect(description.className).toContain('text-muted-foreground');
     });
   });

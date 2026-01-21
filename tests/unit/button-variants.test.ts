@@ -40,27 +40,27 @@ describe('buttonVariants', () => {
   describe('size prop', () => {
     it('generates default size classes', () => {
       const classes = buttonVariants({ size: 'default' });
-      expect(classes).toContain('h-10');
-      expect(classes).toContain('px-4');
-      expect(classes).toContain('py-2');
+      expect(classes).toContain('h-ui-control-md');
+      expect(classes).toContain('px-ui-control-px-md');
+      expect(classes).toContain('py-ui-control-py-md');
     });
 
     it('generates sm size classes', () => {
       const classes = buttonVariants({ size: 'sm' });
-      expect(classes).toContain('h-9');
-      expect(classes).toContain('px-3');
+      expect(classes).toContain('h-ui-control-sm');
+      expect(classes).toContain('px-ui-control-px-sm');
+      expect(classes).toContain('py-ui-control-py-sm');
     });
 
     it('generates lg size classes', () => {
       const classes = buttonVariants({ size: 'lg' });
-      expect(classes).toContain('h-11');
-      expect(classes).toContain('px-8');
+      expect(classes).toContain('h-ui-control-lg');
+      expect(classes).toContain('px-ui-control-px-lg');
     });
 
     it('generates icon size classes', () => {
       const classes = buttonVariants({ size: 'icon' });
-      expect(classes).toContain('h-10');
-      expect(classes).toContain('w-10');
+      expect(classes).toContain('size-ui-control-icon');
     });
   });
 
