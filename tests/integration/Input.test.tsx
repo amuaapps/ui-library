@@ -179,8 +179,8 @@ describe('Input Component', () => {
       render(<Input />);
       const input = screen.getByRole('textbox');
       
-      expect(input.className).toMatch(/px-\d+/);
-      expect(input.className).toMatch(/py-\d+/);
+      expect(input.className).toContain('px-ui-control-px-md');
+      expect(input.className).toContain('py-ui-control-py-md');
       expect(input.className).not.toMatch(/\[\d+px\]/);
     });
 
