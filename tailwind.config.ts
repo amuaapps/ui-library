@@ -63,6 +63,41 @@ const config: Config = {
           foreground: 'hsl(var(--card-foreground))',
         },
       },
+      fontFamily: {
+        sans: ['var(--ui-font-sans)'],
+        mono: ['var(--ui-font-mono)'],
+      },
+      fontSize: {
+        'ui-body': ['var(--ui-text-body)', { lineHeight: 'var(--ui-leading-body)' }],
+        'ui-body-sm': ['var(--ui-text-body-sm)', { lineHeight: 'var(--ui-leading-body-sm)' }],
+        'ui-label': ['var(--ui-text-label)', { lineHeight: 'var(--ui-leading-label)' }],
+        'ui-button': ['var(--ui-text-button)', { lineHeight: 'var(--ui-leading-button)' }],
+        'ui-caption': ['var(--ui-text-caption)', { lineHeight: 'var(--ui-leading-caption)' }],
+        'ui-h1': ['var(--ui-text-h1)', { lineHeight: 'var(--ui-leading-h1)' }],
+        'ui-h2': ['var(--ui-text-h2)', { lineHeight: 'var(--ui-leading-h2)' }],
+        'ui-h3': ['var(--ui-text-h3)', { lineHeight: 'var(--ui-leading-h3)' }],
+      },
+      boxShadow: {
+        'ui-sm': 'var(--ui-shadow-sm)',
+        'ui-md': 'var(--ui-shadow-md)',
+        'ui-lg': 'var(--ui-shadow-lg)',
+      },
+      height: {
+        'ui-control-sm': 'var(--ui-control-h-sm)',
+        'ui-control-md': 'var(--ui-control-h-md)',
+        'ui-control-lg': 'var(--ui-control-h-lg)',
+      },
+      spacing: {
+        'ui-control-px-sm': 'var(--ui-control-px-sm)',
+        'ui-control-px-md': 'var(--ui-control-px-md)',
+        'ui-control-px-lg': 'var(--ui-control-px-lg)',
+        'ui-control-py-sm': 'var(--ui-control-py-sm)',
+        'ui-control-py-md': 'var(--ui-control-py-md)',
+        'ui-control-py-lg': 'var(--ui-control-py-lg)',
+      },
+      size: {
+        'ui-control-icon': 'var(--ui-control-icon)',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',

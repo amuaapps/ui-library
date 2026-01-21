@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  .theme-core {
     /* Base colors */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -43,6 +44,71 @@
 
     /* Border radius token */
     --radius: 0.5rem;
+
+    /* ----- Elevation ----- */
+    --ui-shadow-sm: 0 1px 2px 0 hsl(var(--foreground) / 0.06);
+    --ui-shadow-md: 0 6px 16px -8px hsl(var(--foreground) / 0.18);
+    --ui-shadow-lg: 0 14px 40px -18px hsl(var(--foreground) / 0.28);
+
+    /* ----- Typography ----- */
+    --ui-font-sans:
+      ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+      'Apple Color Emoji', 'Segoe UI Emoji';
+    --ui-font-mono:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+      monospace;
+
+    --ui-text-body: 1rem;
+    --ui-text-body-sm: 0.875rem;
+    --ui-text-label: 0.875rem;
+    --ui-text-button: 0.875rem;
+    --ui-text-caption: 0.75rem;
+    --ui-text-h1: 2rem;
+    --ui-text-h2: 1.5rem;
+    --ui-text-h3: 1.25rem;
+
+    --ui-leading-body: 1.5rem;
+    --ui-leading-body-sm: 1.25rem;
+    --ui-leading-label: 1.25rem;
+    --ui-leading-button: 1.25rem;
+    --ui-leading-caption: 1rem;
+    --ui-leading-h1: 2.25rem;
+    --ui-leading-h2: 2rem;
+    --ui-leading-h3: 1.75rem;
+
+    --ui-weight-normal: 400;
+    --ui-weight-medium: 500;
+    --ui-weight-semibold: 600;
+
+    /* ----- Density ----- */
+    --ui-control-h-sm: 2.25rem;
+    --ui-control-h-md: 2.5rem;
+    --ui-control-h-lg: 2.75rem;
+
+    --ui-control-px-sm: 0.75rem;
+    --ui-control-px-md: 1rem;
+    --ui-control-px-lg: 1.25rem;
+
+    --ui-control-py-sm: 0.5rem;
+    --ui-control-py-md: 0.625rem;
+    --ui-control-py-lg: 0.75rem;
+
+    --ui-control-icon: 2.5rem;
+
+    /* ----- Borders & focus ----- */
+    --ui-border-w: 1px;
+    --ui-border-w-strong: 2px;
+
+    --ui-ring-w: 2px;
+    --ui-ring-offset-w: 2px;
+
+    /* ----- Motion ----- */
+    --ui-duration-fast: 120ms;
+    --ui-duration-normal: 180ms;
+    --ui-duration-slow: 260ms;
+
+    --ui-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ui-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
   }
 
   .dark {
