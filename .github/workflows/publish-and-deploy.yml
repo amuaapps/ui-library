@@ -50,9 +50,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@amuaapps'
+      
+      - name: Configure npm authentication
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_PACKAGE_TOKEN }}" >> ~/.npmrc
+          echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
       
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PACKAGE_TOKEN }}
       
       - name: Run Linter
         run: npm run lint
@@ -108,8 +117,15 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@amuaapps'
       
+      - name: Configure npm authentication
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_PACKAGE_TOKEN }}" >> ~/.npmrc
+          echo "@amuaapps:registry=https://npm.pkg.github.com" >> ~/.npmrc
+      
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PACKAGE_TOKEN }}
       
       - name: Detect Environment
         id: env-detect

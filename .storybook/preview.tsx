@@ -2,6 +2,7 @@ import type { Preview } from '@storybook/react';
 import type { Decorator } from '@storybook/react';
 import { useEffect } from 'react';
 import '../src/styles/index.css';
+import '@amuaapps/ui-theme-core/theme.css';
 
 // Theme decorator to apply dark class based on global theme
 const withTheme: Decorator = (Story, context) => {
@@ -10,10 +11,10 @@ const withTheme: Decorator = (Story, context) => {
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove('light', 'dark');
-    root.classList.add(theme);
+    root.classList.add('theme-core', theme);
     
     // Apply background and text color to body
-    document.body.className = theme;
+    document.body.className = `theme-core ${theme}`;
   }, [theme]);
 
   return (
