@@ -14,6 +14,7 @@ export * from './components/checkbox';
 export * from './components/collapsible';
 export * from './components/dialog';
 export * from './components/dropdown-menu';
+export * from './components/footer';
 export * from './components/input';
 export * from './components/label';
 export * from './components/popover';
@@ -28,6 +29,7 @@ export * from './components/tabs';
 export * from './components/textarea';
 export * from './components/toggle';
 export * from './components/tooltip';
+export * from './components/top-navigation';
 
 // Hooks
 export * from './hooks/use-example';

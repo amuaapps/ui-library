@@ -1,6 +1,6 @@
 {
   "name": "@amuaapps/ui-library",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Amua Apps UI Library - Component library for building modern web applications",
   "publishConfig": {
     "access": "public"

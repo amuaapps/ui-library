@@ -9,6 +9,7 @@ import '@amuaapps/ui-theme-secondary/theme.css';
 const withTheme: Decorator = (Story, context) => {
   const colorMode = context.globals.colorMode || 'light';
   const themeVariant = context.globals.themeVariant || 'core';
+  const layout = context.parameters.layout || 'centered';
 
   useEffect(() => {
     const root = document.documentElement;
@@ -23,8 +24,13 @@ const withTheme: Decorator = (Story, context) => {
     document.body.className = `theme-${themeVariant} ${colorMode}`;
   }, [colorMode, themeVariant]);
 
+  // Don't add padding for fullscreen layouts
+  const wrapperClass = layout === 'fullscreen' 
+    ? 'bg-background text-foreground min-h-screen'
+    : 'bg-background text-foreground min-h-screen p-4';
+
   return (
-    <div className="bg-background text-foreground min-h-screen p-4">
+    <div className={wrapperClass}>
       <Story />
     </div>
   );
