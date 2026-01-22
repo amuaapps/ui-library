@@ -31,14 +31,14 @@ A theme is applied by setting a class on the app root:
 ```html
 <html class="theme-core">…</html>
 <!-- or -->
-<html class="theme-marketing">…</html>
+<html class="theme-secondary">…</html>
 ```
 
 Each theme defines tokens under its selector:
 
 ```css
 :root, .theme-core { … }      /* default */
-.theme-marketing { … }        /* overrides */
+.theme-secondary { … }        /* overrides */
 ```
 
 ---
