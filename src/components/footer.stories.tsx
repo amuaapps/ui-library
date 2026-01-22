@@ -40,9 +40,7 @@ export const WithCustomLogo: Story = {
     <div className="min-h-screen flex flex-col">
       <div className="flex-1 p-8">
         <h1 className="text-ui-h1 font-semibold mb-4">Custom Logo Example</h1>
-        <p className="text-ui-body text-muted-foreground">
-          Footer with a custom logo component.
-        </p>
+        <p className="text-ui-body text-muted-foreground">Footer with a custom logo component.</p>
       </div>
       <Footer
         logo={
@@ -61,9 +59,7 @@ export const WithCustomLinks: Story = {
     <div className="min-h-screen flex flex-col">
       <div className="flex-1 p-8">
         <h1 className="text-ui-h1 font-semibold mb-4">Custom Links Example</h1>
-        <p className="text-ui-body text-muted-foreground">
-          Footer with custom navigation links.
-        </p>
+        <p className="text-ui-body text-muted-foreground">Footer with custom navigation links.</p>
       </div>
       <Footer
         links={[
@@ -82,9 +78,7 @@ export const WithCustomCopyright: Story = {
     <div className="min-h-screen flex flex-col">
       <div className="flex-1 p-8">
         <h1 className="text-ui-h1 font-semibold mb-4">Custom Copyright Text</h1>
-        <p className="text-ui-body text-muted-foreground">
-          Footer with custom copyright text.
-        </p>
+        <p className="text-ui-body text-muted-foreground">Footer with custom copyright text.</p>
       </div>
       <Footer copyrightText="© 2026 Your Company. All rights reserved." />
     </div>
@@ -167,9 +161,7 @@ export const DarkModeCustomized: Story = {
     <div className="dark min-h-screen flex flex-col bg-background text-foreground">
       <div className="flex-1 p-8">
         <h1 className="text-ui-h1 font-semibold mb-4">Dark Mode - Customized</h1>
-        <p className="text-ui-body text-muted-foreground">
-          Fully customized footer in dark mode.
-        </p>
+        <p className="text-ui-body text-muted-foreground">Fully customized footer in dark mode.</p>
       </div>
       <Footer
         logo={

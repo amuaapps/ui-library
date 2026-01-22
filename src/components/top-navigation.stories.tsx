@@ -77,9 +77,7 @@ export const WithImageLogo: Story = {
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </div>
-            <span className="text-ui-label font-semibold hidden sm:inline-block">
-              Company
-            </span>
+            <span className="text-ui-label font-semibold hidden sm:inline-block">Company</span>
           </div>
         }
       />
@@ -166,9 +164,7 @@ export const DarkModeWithImageLogo: Story = {
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </div>
-            <span className="text-ui-label font-semibold hidden sm:inline-block">
-              Company
-            </span>
+            <span className="text-ui-label font-semibold hidden sm:inline-block">Company</span>
           </div>
         }
       />

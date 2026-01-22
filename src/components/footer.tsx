@@ -24,10 +24,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
     return (
       <footer
         ref={ref}
-        className={cn(
-          'w-full border-t bg-muted dark:bg-background',
-          className
-        )}
+        className={cn('w-full border-t bg-muted dark:bg-background', className)}
         {...props}
       >
         <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -45,11 +42,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
             {/* Links */}
             <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
               {footerLinks.map((link, index) => (
-                <Button
-                  key={index}
-                  variant="link"
-                  asChild
-                >
+                <Button key={index} variant="link" asChild>
                   <a href={link.href}>{link.label}</a>
                 </Button>
               ))}
