@@ -23,9 +23,7 @@ const CollapsibleBox = React.forwardRef<HTMLDivElement, CollapsibleBoxProps>(
     const contentRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
 
     React.useEffect(() => {
-      const heights = Array.from(contentRefs.current.values()).map(
-        (el) => el.scrollHeight
-      );
+      const heights = Array.from(contentRefs.current.values()).map((el) => el.scrollHeight);
       const maxHeight = Math.max(...heights, 0);
       if (maxHeight > 0) {
         setContentHeight(maxHeight);
@@ -84,9 +82,7 @@ const CollapsibleBox = React.forwardRef<HTMLDivElement, CollapsibleBoxProps>(
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-4 animate-in slide-in-from-top-2 duration-200">
-                  <div ref={(el) => el && contentRefs.current.set(item.id, el)}>
-                    {item.content}
-                  </div>
+                  <div ref={(el) => el && contentRefs.current.set(item.id, el)}>{item.content}</div>
                 </CollapsibleContent>
               </Collapsible>
             );

@@ -93,8 +93,8 @@ export const RichContent: Story = {
           <div className="space-y-4">
             <p className="text-ui-body-sm text-muted-foreground">
               Our comprehensive analytics dashboard provides real-time insights into your data.
-              Track key metrics, visualize trends, and make data-driven decisions with ease.
-              The intuitive interface makes it simple to understand complex data patterns.
+              Track key metrics, visualize trends, and make data-driven decisions with ease. The
+              intuitive interface makes it simple to understand complex data patterns.
             </p>
             <img
               src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=300&fit=crop"

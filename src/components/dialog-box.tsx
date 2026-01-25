@@ -33,7 +33,7 @@ const DialogBox = React.forwardRef<HTMLDivElement, DialogBoxProps>(
         )}
       >
         <h2 className="text-ui-h2 font-semibold mb-6">{title}</h2>
-        
+
         {/* List view */}
         <div
           className={cn(
@@ -65,11 +65,7 @@ const DialogBox = React.forwardRef<HTMLDivElement, DialogBoxProps>(
 
         {/* Expanded view */}
         {openItem && (
-          <div
-            className={cn(
-              'animate-in fade-in-0 slide-in-from-top-2 duration-200'
-            )}
-          >
+          <div className={cn('animate-in fade-in-0 slide-in-from-top-2 duration-200')}>
             <div className="flex items-center gap-3 p-4 bg-muted rounded-lg mb-4">
               {openItem.icon && (
                 <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-primary-foreground">
