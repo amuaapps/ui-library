@@ -575,6 +575,30 @@ jobs:
           
           echo "✓ Deployed and verified AWS GREEN environment"
           echo "URL: $GREEN_URL"
+      
+      - name: Save Deployment Outputs
+        run: |
+          mkdir -p deployment-outputs
+          cat > deployment-outputs/outputs.json <<EOF
+          {
+            "provider": "${{ steps.detect-provider.outputs.provider }}",
+            "green_url": "${{ steps.deploy-azure.outputs.green_url || steps.deploy-aws.outputs.green_url }}",
+            "resource_group": "${{ steps.deploy-azure.outputs.resource_group || steps.deploy-aws.outputs.resource_group }}",
+            "green_account": "${{ steps.deploy-azure.outputs.green_account || '' }}",
+            "green_bucket": "${{ steps.deploy-aws.outputs.green_bucket || '' }}",
+            "cdn_profile": "${{ steps.deploy-azure.outputs.cdn_profile || '' }}",
+            "cdn_endpoint": "${{ steps.deploy-azure.outputs.cdn_endpoint || '' }}",
+            "distribution_id": "${{ steps.deploy-aws.outputs.distribution_id || '' }}"
+          }
+          EOF
+          cat deployment-outputs/outputs.json
+      
+      - name: Upload Deployment Outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-outputs
+          path: deployment-outputs/
+          retention-days: 1
 
   # Step 6: Verify & Switch Blue-Green
   switch:
@@ -587,6 +611,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
+      - name: Download Deployment Outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-outputs
+          path: deployment-outputs/
+      
+      - name: Load Deployment Outputs
+        id: load-outputs
+        run: |
+          # Load outputs from artifact
+          PROVIDER=$(jq -r '.provider' deployment-outputs/outputs.json)
+          GREEN_URL=$(jq -r '.green_url' deployment-outputs/outputs.json)
+          RESOURCE_GROUP=$(jq -r '.resource_group' deployment-outputs/outputs.json)
+          GREEN_ACCOUNT=$(jq -r '.green_account' deployment-outputs/outputs.json)
+          GREEN_BUCKET=$(jq -r '.green_bucket' deployment-outputs/outputs.json)
+          CDN_PROFILE=$(jq -r '.cdn_profile' deployment-outputs/outputs.json)
+          CDN_ENDPOINT=$(jq -r '.cdn_endpoint' deployment-outputs/outputs.json)
+          DISTRIBUTION_ID=$(jq -r '.distribution_id' deployment-outputs/outputs.json)
+          
+          # Set as outputs for later steps
+          echo "provider=$PROVIDER" >> $GITHUB_OUTPUT
+          echo "green_url=$GREEN_URL" >> $GITHUB_OUTPUT
+          echo "resource_group=$RESOURCE_GROUP" >> $GITHUB_OUTPUT
+          echo "green_account=$GREEN_ACCOUNT" >> $GITHUB_OUTPUT
+          echo "green_bucket=$GREEN_BUCKET" >> $GITHUB_OUTPUT
+          echo "cdn_profile=$CDN_PROFILE" >> $GITHUB_OUTPUT
+          echo "cdn_endpoint=$CDN_ENDPOINT" >> $GITHUB_OUTPUT
+          echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+          
+          # Display loaded values
+          echo "Loaded deployment outputs:"
+          echo "  Provider: $PROVIDER"
+          echo "  GREEN URL: $GREEN_URL"
+          echo "  Resource Group: $RESOURCE_GROUP"
+      
       - name: Wait for Storage Propagation
         run: |
           echo "Waiting 10 seconds for storage propagation..."
@@ -594,14 +653,15 @@ jobs:
       
       - name: Verify GREEN Deployment
         run: |
+          GREEN_URL="${{ steps.load-outputs.outputs.green_url }}"
           chmod +x infra/shared/storybook/verify.sh
           ./infra/shared/storybook/verify.sh \
-            -u "${{ needs.deploy.outputs.green_url }}" \
+            -u "$GREEN_URL" \
             --verbose
       
       # Azure Switch
       - name: Azure Login (OIDC)
-        if: needs.deploy.outputs.provider == 'azure'
+        if: steps.load-outputs.outputs.provider == 'azure'
         uses: azure/login@v1
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
@@ -609,7 +669,7 @@ jobs:
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       
       - name: Switch to GREEN (Azure)
-        if: needs.deploy.outputs.provider == 'azure'
+        if: steps.load-outputs.outputs.provider == 'azure'
         run: |
           cd infra/azure/storybook/bicep
           
@@ -640,18 +700,18 @@ jobs:
           EOF
           
           chmod +x switch.sh
-          ./switch.sh green -g "${{ needs.deploy.outputs.resource_group }}" --auto-approve
+          ./switch.sh green -g "${{ steps.load-outputs.outputs.resource_group }}" --auto-approve
       
       # AWS Switch
       - name: Configure AWS Credentials (OIDC)
-        if: needs.deploy.outputs.provider == 'aws'
+        if: steps.load-outputs.outputs.provider == 'aws'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
       
       - name: Switch to GREEN (AWS)
-        if: needs.deploy.outputs.provider == 'aws'
+        if: steps.load-outputs.outputs.provider == 'aws'
         run: |
           # Install Terraform
           wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
@@ -692,8 +752,8 @@ jobs:
           echo "## Deployment Complete ✓" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** ${{ needs.build.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Provider:** ${{ needs.deploy.outputs.provider }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Storybook URL:** ${{ needs.deploy.outputs.green_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Provider:** ${{ steps.load-outputs.outputs.provider }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Storybook URL:** ${{ steps.load-outputs.outputs.green_url }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ needs.build.outputs.should_publish }}" = "true" ]; then
