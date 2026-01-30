@@ -24,6 +24,7 @@ export * from './dialog-box';
 export * from './drawer';
 export * from './dropdown-menu';
 export * from './form';
+export * from './hero';
 export * from './hover-card';
 export * from './input';
 export * from './label';
